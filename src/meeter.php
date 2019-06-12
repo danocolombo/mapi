@@ -178,7 +178,6 @@ $app->delete('/api/user/delete/{id}', function(Request $request, Response $respo
 	}
 		
 });
-	
 
 //get admins for client
 $app->get('/api/client/getAdmins/{client}', function(Request $request, Response $response){
@@ -219,144 +218,191 @@ $app->get('/api/client/getAdmins/{client}', function(Request $request, Response 
 	}
 		
 });
-
-    //get future meetings for client
-    $app->get('/api/meetings/getFuture/{client}', function(Request $request, Response $response){
+//get admins for client
+    $app->get('/api/user/isAdmin/{client}', function(Request $request, Response $response){
+    $userID = $_GET['uid'];
+//     echo "userID = " .  $userID;
+    
+    $client = $request->getAttribute('client');
+    $clientTable = $client . ".Meeter";
+    switch($client){
+        case "ccc":
+            $sql = "SELECT Setting FROM ccc.Meeter WHERE Config = 'Admin'";
+            break;
+        case "cpv":
+            $sql = "SELECT Setting FROM cpv.Meeter WHERE Config = 'Admin'";
+            break;
+        case "wbc":
+            $sql = "SELECT Setting FROM wbc.Meeter WHERE Config = 'Admin'";
+            break;
+        default:
+            echo '{"error": {"text": <br/>NEED client<br/>'.$client.'}';
+            exit;
+    }
+    try{
+        //get db object
+        $db = new db();
+        // call connect
+        $db = $db->connect();
+        $stmt = $db->prepare($sql);
+        $stmt->execute(array($clientTable,'Admin'));
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
         
+        $jsonFromDb = json_decode($result, true);
+        $adminIDs = $jsonFromDb['Setting'];
+        echo "Admin string for " . $client . " is >>" . $adminIDs . "\n\n";
+        exit;
+        $db = null;
+        return $response->withStatus(200)
+        ->withHeader('Content-Type','application/json')
+        ->write(json_encode($result));
+        
+    }catch(PDOEXCEPTION $e){
+        echo '{"error": {"text": '.$e->getMessage().'<br/>'.$sql.'<br/>'.$client.'}';
+        
+    }
+    
+});
+
+
+
+//get future meetings for client
+$app->get('/api/meetings/getFuture/{client}', function(Request $request, Response $response){
+    
+    $client = $request->getAttribute('client');
+    $tmpToday = date("Y-m-d");
+    switch($client){
+        case "ccc":
+            $sql = "select m.ID meetingID, m.MtgDate meetingDate, m.MtgType meetingType, m.MtgTitle meetingTitle, p.fName meetingFacilitator, 
+                w.fName worship, m.MtgAttendance meetingAttendance from ccc.meetings m, ccc.people p, ccc.people w where 
+                m.MtgFac = p.ID and m.MtgWorship = w.ID AND m.MtgDate >= '" . $tmpToday . "' ORDER BY m.MtgDate ASC";
+            break;
+        case "cpv":
+            $sql = "select m.ID meetingID, m.MtgDate meetingDate, m.MtgType meetingType, m.MtgTitle meetingTitle, p.fName meetingFacilitator,
+                w.fName worship, m.MtgAttendance meetingAttendance from cpv.meetings m, cpv.people p, cpv.people w where
+                m.MtgFac = p.ID and m.MtgWorship = w.ID AND m.MtgDate >= '" . $tmpToday . "' ORDER BY m.MtgDate ASC";
+            break;
+        case "wbc":
+            $sql = "select m.ID meetingID, m.MtgDate meetingDate, m.MtgType meetingType, m.MtgTitle meetingTitle, p.fName meetingFacilitator,
+                w.fName worship, m.MtgAttendance meetingAttendance from wbc.meetings m, wbc.people p, wbc.people w where
+                m.MtgFac = p.ID and m.MtgWorship = w.ID AND m.MtgDate >= '" . $tmpToday . "' ORDER BY m.MtgDate ASC";
+            break;
+        default:
+            echo '{"error": {"text": <br/>NEED client<br/>'.$client.'}';
+            exit;
+    }
+    try{
+        //get db object
+        $db = new db();
+        // call connect
+        $db = $db->connect();
+        $stmt = $db->query($sql);
+        $meetings = $stmt->fetchAll(PDO::FETCH_OBJ);
+        
+        $db = null;
+        return $response->withStatus(200)
+        ->withHeader('Content-Type','application/json')
+        ->write(json_encode($meetings));
+        
+    }catch(PDOEXCEPTION $e){
+        echo '{"error": {"text": '.$e->getMessage().'<br/>'.$sql.'<br/>'.$client.'}';
+        
+    }
+    
+});
+    
+//get past meetings for client
+$app->get('/api/meetings/getHistory/{client}', function(Request $request, Response $response){
+    
+    $client = $request->getAttribute('client');
+    $tmpToday = date("Y-m-d");
+    switch($client){
+        case "ccc":
+            $sql = "select m.ID meetingID, m.MtgDate meetingDate, m.MtgType meetingType, m.MtgTitle meetingTitle, p.fName meetingFacilitator,
+            w.fName worship, m.MtgAttendance meetingAttendance from ccc.meetings m, ccc.people p, ccc.people w where
+            m.MtgFac = p.ID and m.MtgWorship = w.ID AND m.MtgDate <= '" . $tmpToday . "' ORDER BY m.MtgDate ASC";
+            break;
+        case "cpv":
+            $sql = "select m.ID meetingID, m.MtgDate meetingDate, m.MtgType meetingType, m.MtgTitle meetingTitle, p.fName meetingFacilitator,
+            w.fName worship, m.MtgAttendance meetingAttendance from cpv.meetings m, cpv.people p, cpv.people w where
+            m.MtgFac = p.ID and m.MtgWorship = w.ID AND m.MtgDate <= '" . $tmpToday . "' ORDER BY m.MtgDate ASC";
+            break;
+        case "wbc":
+            $sql = "select m.ID meetingID, m.MtgDate meetingDate, m.MtgType meetingType, m.MtgTitle meetingTitle, p.fName meetingFacilitator,
+            w.fName worship, m.MtgAttendance meetingAttendance from wbc.meetings m, wbc.people p, wbc.people w where
+            m.MtgFac = p.ID and m.MtgWorship = w.ID AND m.MtgDate <= '" . $tmpToday . "' ORDER BY m.MtgDate ASC";
+            break;
+        default:
+            echo '{"error": {"text": <br/>NEED client<br/>'.$client.'}';
+            exit;
+    }
+    try{
+        //get db object
+        $db = new db();
+        // call connect
+        $db = $db->connect();
+        $stmt = $db->query($sql);
+        $meetings = $stmt->fetchAll(PDO::FETCH_OBJ);
+        
+        $db = null;
+        return $response->withStatus(200)
+        ->withHeader('Content-Type','application/json')
+        ->write(json_encode($meetings));
+        
+    }catch(PDOEXCEPTION $e){
+        echo '{"error": {"text": '.$e->getMessage().'<br/>'.$sql.'<br/>'.$client.'}';
+        
+    }
+    
+});
+    //delete meeting
+    $app->delete('/api/meeting/deleteAll/{client}', function(Request $request, Response $response){
         $client = $request->getAttribute('client');
-        $tmpToday = date("Y-m-d");
+        $id = $request->getParam('meetingID');
+        if (strlen($id) < 1){
+            // no meeting ID provided - exit
+            $msg = 'meetingID required to perform delete. id:' . $id;
+            return $response->withStatus(400)
+            ->withHeader('Content-Type','application/json')
+            ->write(json_encode($msg));
+            
+            exit;
+        }
         switch($client){
             case "ccc":
-                $sql = "select m.ID meetingID, m.MtgDate meetingDate, m.MtgType meetingType, m.MtgTitle meetingTitle, p.fName meetingFacilitator, 
-                    w.fName worship, m.MtgAttendance meetingAttendance from ccc.meetings m, ccc.people p, ccc.people w where 
-                    m.MtgFac = p.ID and m.MtgWorship = w.ID AND m.MtgDate >= '" . $tmpToday . "' ORDER BY m.MtgDate ASC";
+                $sql = "DELETE FROM ccc.meetings WHERE ID = $id";
+                $sql2 = "DELETE FROM ccc.groups WHERE MtgID = $id";
                 break;
             case "cpv":
-                $sql = "select m.ID meetingID, m.MtgDate meetingDate, m.MtgType meetingType, m.MtgTitle meetingTitle, p.fName meetingFacilitator,
-                    w.fName worship, m.MtgAttendance meetingAttendance from cpv.meetings m, cpv.people p, cpv.people w where
-                    m.MtgFac = p.ID and m.MtgWorship = w.ID AND m.MtgDate >= '" . $tmpToday . "' ORDER BY m.MtgDate ASC";
+                $sql = "DELETE FROM cpv.meetings WHERE ID = $id";
+                $sql2 = "DELETE FROM cpv.groups WHERE MtgID = $id";
                 break;
             case "wbc":
-                $sql = "select m.ID meetingID, m.MtgDate meetingDate, m.MtgType meetingType, m.MtgTitle meetingTitle, p.fName meetingFacilitator,
-                    w.fName worship, m.MtgAttendance meetingAttendance from wbc.meetings m, wbc.people p, wbc.people w where
-                    m.MtgFac = p.ID and m.MtgWorship = w.ID AND m.MtgDate >= '" . $tmpToday . "' ORDER BY m.MtgDate ASC";
+                $sql = "DELETE FROM wbc.meetings WHERE ID = $id";
+                $sql2 = "DELETE FROM wbc.groups WHERE MtgID = $id";
                 break;
             default:
                 echo '{"error": {"text": <br/>NEED client<br/>'.$client.'}';
                 exit;
         }
+        
+        
         try{
             //get db object
             $db = new db();
             // call connect
             $db = $db->connect();
-            $stmt = $db->query($sql);
-            $meetings = $stmt->fetchAll(PDO::FETCH_OBJ);
+            
+            $stmt = $db->prepare($sql);
+            $stmt->execute();
+            $stmt = $db->prepare($sql2);
+            $stmt->execute();
             
             $db = null;
-            return $response->withStatus(200)
-            ->withHeader('Content-Type','application/json')
-            ->write(json_encode($meetings));
-            
+            echo '{"notice": {"text": "All Meeting References Deleted"}';
         }catch(PDOEXCEPTION $e){
-            echo '{"error": {"text": '.$e->getMessage().'<br/>'.$sql.'<br/>'.$client.'}';
+            echo '{"error": {"text": '.$e->getMessage().'}';
             
         }
         
     });
-    
-        //get past meetings for client
-        $app->get('/api/meetings/getHistory/{client}', function(Request $request, Response $response){
-            
-            $client = $request->getAttribute('client');
-            $tmpToday = date("Y-m-d");
-            switch($client){
-                case "ccc":
-                    $sql = "select m.ID meetingID, m.MtgDate meetingDate, m.MtgType meetingType, m.MtgTitle meetingTitle, p.fName meetingFacilitator,
-                    w.fName worship, m.MtgAttendance meetingAttendance from ccc.meetings m, ccc.people p, ccc.people w where
-                    m.MtgFac = p.ID and m.MtgWorship = w.ID AND m.MtgDate <= '" . $tmpToday . "' ORDER BY m.MtgDate ASC";
-                    break;
-                case "cpv":
-                    $sql = "select m.ID meetingID, m.MtgDate meetingDate, m.MtgType meetingType, m.MtgTitle meetingTitle, p.fName meetingFacilitator,
-                    w.fName worship, m.MtgAttendance meetingAttendance from cpv.meetings m, cpv.people p, cpv.people w where
-                    m.MtgFac = p.ID and m.MtgWorship = w.ID AND m.MtgDate <= '" . $tmpToday . "' ORDER BY m.MtgDate ASC";
-                    break;
-                case "wbc":
-                    $sql = "select m.ID meetingID, m.MtgDate meetingDate, m.MtgType meetingType, m.MtgTitle meetingTitle, p.fName meetingFacilitator,
-                    w.fName worship, m.MtgAttendance meetingAttendance from wbc.meetings m, wbc.people p, wbc.people w where
-                    m.MtgFac = p.ID and m.MtgWorship = w.ID AND m.MtgDate <= '" . $tmpToday . "' ORDER BY m.MtgDate ASC";
-                    break;
-                default:
-                    echo '{"error": {"text": <br/>NEED client<br/>'.$client.'}';
-                    exit;
-            }
-            try{
-                //get db object
-                $db = new db();
-                // call connect
-                $db = $db->connect();
-                $stmt = $db->query($sql);
-                $meetings = $stmt->fetchAll(PDO::FETCH_OBJ);
-                
-                $db = null;
-                return $response->withStatus(200)
-                ->withHeader('Content-Type','application/json')
-                ->write(json_encode($meetings));
-                
-            }catch(PDOEXCEPTION $e){
-                echo '{"error": {"text": '.$e->getMessage().'<br/>'.$sql.'<br/>'.$client.'}';
-                
-            }
-            
-        });
-            //delete meeting
-            $app->delete('/api/meeting/deleteAll/{client}', function(Request $request, Response $response){
-                $client = $request->getAttribute('client');
-                $id = $request->getParam('meetingID');
-                if (strlen($id) < 1){
-                    // no meeting ID provided - exit
-                    $msg = 'meetingID required to perform delete. id:' . $id;
-                    return $response->withStatus(400)
-                    ->withHeader('Content-Type','application/json')
-                    ->write(json_encode($msg));
-                    
-                    exit;
-                }
-                switch($client){
-                    case "ccc":
-                        $sql = "DELETE FROM ccc.meetings WHERE ID = $id";
-                        $sql2 = "DELETE FROM ccc.groups WHERE MtgID = $id";
-                        break;
-                    case "cpv":
-                        $sql = "DELETE FROM cpv.meetings WHERE ID = $id";
-                        $sql2 = "DELETE FROM cpv.groups WHERE MtgID = $id";
-                        break;
-                    case "wbc":
-                        $sql = "DELETE FROM wbc.meetings WHERE ID = $id";
-                        $sql2 = "DELETE FROM wbc.groups WHERE MtgID = $id";
-                        break;
-                    default:
-                        echo '{"error": {"text": <br/>NEED client<br/>'.$client.'}';
-                        exit;
-                }
-                
-                
-                try{
-                    //get db object
-                    $db = new db();
-                    // call connect
-                    $db = $db->connect();
-                    
-                    $stmt = $db->prepare($sql);
-                    $stmt->execute();
-                    $stmt = $db->prepare($sql2);
-                    $stmt->execute();
-                    
-                    $db = null;
-                    echo '{"notice": {"text": "All Meeting References Deleted"}';
-                }catch(PDOEXCEPTION $e){
-                    echo '{"error": {"text": '.$e->getMessage().'}';
-                    
-                }
-                
-            });
