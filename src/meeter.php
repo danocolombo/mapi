@@ -182,6 +182,8 @@ $app->delete('/api/user/delete/{id}', function(Request $request, Response $respo
 //get admins for client
 $app->get('/api/client/getAdmins/{client}', function(Request $request, Response $response){
 
+    	$userID = $_GET['uid'];
+
 	$client = $request->getAttribute('client');
 	$clientTable = $client . ".Meeter";
 	switch($client){
@@ -206,6 +208,22 @@ $app->get('/api/client/getAdmins/{client}', function(Request $request, Response 
 		$stmt = $db->prepare($sql);
 		$stmt->execute(array($clientTable,'Admin'));
 		$result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+		print_r($result);
+		echo "<br/>Setting value = " . $result['Setting'] . " ----hmmmm\n";
+		$admins = explode('#',$result['Setting']);
+		$adminCheck = FALSE;
+		foreach($admins as $admin){
+			if($admin == $userID){
+				$adminCheck = TRUE;
+			}
+		}
+		if ($adminCheck == TRUE){
+			echo "<br>The user IS and ADMIN" ;
+		}else{
+			echo "<br>The user IS NOT ADMIN";
+		}
+		exit;
 
 		$db = null;
 		return $response->withStatus(200)
@@ -251,6 +269,7 @@ $app->get('/api/client/getAdmins/{client}', function(Request $request, Response 
         $jsonFromDb = json_decode($result, true);
         $adminIDs = $jsonFromDb['Setting'];
         echo "Admin string for " . $client . " is >>" . $adminIDs . "\n\n";
+	echo "value: " . $result->Setting . " hmmm\n";
         exit;
         $db = null;
         return $response->withStatus(200)
