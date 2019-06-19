@@ -181,7 +181,7 @@ $app->delete('/api/user/delete/{id}', function(Request $request, Response $respo
 
 //get admins for client
 $app->get('/api/client/getAdmins/{client}', function(Request $request, Response $response){
-    $userID = $_GET['uid'];
+    //$userID = $_GET['uid'];
 
 	$client = $request->getAttribute('client');
 	$clientTable = $client . ".Meeter";
@@ -272,11 +272,6 @@ $app->get('/api/client/getAdmins/{client}', function(Request $request, Response 
         $stmt = $db->prepare($sql);
         $stmt->execute(array($clientTable,'Admins'));
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        
-        //print_r($result);
-        // the result variable now contains the Admins setting string
-        
-        //echo "<br/>Setting value = " . $result['Setting'] . " ----hmmmm\n";
         $admins = explode('|',$result['Setting']);
         $adminCheck = FALSE;
         foreach($admins as $admin){
@@ -285,20 +280,15 @@ $app->get('/api/client/getAdmins/{client}', function(Request $request, Response 
             }
         }
         if ($adminCheck == TRUE){
-            
-            $result = array('admin', 'true');
-            
-            //echo "<br>The user IS and ADMIN" ;
+            $meeterCheck->admin = "true";
         }else{
-            $result = array('admin', 'false');
-            //echo "<br>The user IS NOT ADMIN";
+            $meeterCheck->admin = "false";
         }
-        //exit;
         
         $db = null;
         return $response->withStatus(200)
         ->withHeader('Content-Type','application/json')
-        ->write(json_encode($result));
+        ->write(json_encode($meeterCheck));
         
     }catch(PDOEXCEPTION $e){
         echo '{"error": {"text": '.$e->getMessage().'<br/>'.$sql.'<br/>'.$client.'}';
