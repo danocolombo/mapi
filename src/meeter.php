@@ -269,7 +269,7 @@ $app->get('/api/client/getAdmins/{client}', function(Request $request, Response 
         $jsonFromDb = json_decode($result, true);
         $adminIDs = $jsonFromDb['Setting'];
         echo "Admin string for " . $client . " is >>" . $adminIDs . "\n\n";
-	echo "value: " . $result->Setting . " hmmm\n";
+	    echo "value: " . $result->Setting . " hmmm\n";
         exit;
         $db = null;
         return $response->withStatus(200)
