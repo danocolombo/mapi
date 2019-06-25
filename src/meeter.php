@@ -275,9 +275,7 @@ $app->get('/api/client/getAdmins/{client}', function(Request $request, Response 
         $admins = explode('|',$result['Setting']);
         $adminCheck = FALSE;
         foreach($admins as $admin){
-            if($admin == $userID){
-                $adminCheck = TRUE;
-            }
+        
         }
         if ($adminCheck == TRUE){
             $meeterCheck->admin = "true";
@@ -434,6 +432,75 @@ $app->get('/api/meetings/getHistory/{client}', function(Request $request, Respon
             echo '{"notice": {"text": "All Meeting References Deleted"}';
         }catch(PDOEXCEPTION $e){
             echo '{"error": {"text": '.$e->getMessage().'}';
+            
+        }
+        
+    });
+    //###########################
+    // GET SYSTEM CONFIG FOR CLIENT
+    //
+    //  http://rogueintel.org/mapi/public/index.php/api/client/getConfig/wbc
+    //
+    // ###########################
+    $app->get('/api/client/getConfig/{client}', function(Request $request, Response $response){
+        $client = $request->getAttribute('client');
+        switch($client){
+            case "ccc":
+                $sql = "SELECT Setting FROM ccc.Meeter WHERE Config = 'AOS'";
+                break;
+            case "cpv":
+                $sql = "SELECT Setting FROM cpv.Meeter WHERE Config = 'AOS'";
+                break;
+            case "wbc":
+                $sql = "SELECT Setting FROM wbc.Meeter WHERE Config = 'AOS'";
+                break;
+            default:
+                echo '{"error": {"text": <br/>NEED client<br/>'.$client.'}';
+                exit;
+        }
+        try{
+            //get db object
+            $db = new db();
+            // call connect
+            $db = $db->connect();
+            $stmt = $db->query($sql);
+            $config = $stmt->fetchAll(PDO::FETCH_BOTH);
+            
+            $zero = $config[0];
+//             print_r($zero);
+//             echo "<br><br>";
+//             print_r($config);
+//             echo "<br>sizeofZero: " . sizeof($zero) . "<br><br>";
+//             echo "0: $zero[0] <br>";
+            $values = explode("|", $zero[0]);
+//             print_r($values);
+            
+//             echo "1: $zero[1] <br>";
+//             $one = $config[0];
+//             $print_r($config[0]);
+//             var_dump($one);
+            
+            
+            
+//             $setting = json_encode($config);
+            
+//             print_r($config);
+//             echo "<br><br>";
+//             $value = $setting[0];
+//             print_r($value);
+//             echo "<br>";
+//             echo "<br>value: " . $value  . "<br>";
+//             $settings = explode("#", $config['Setting']);
+//             echo "<br>Setting:":
+//             print_r($settings);
+//             exit;
+            $db = null;
+            return $response->withStatus(200)
+            ->withHeader('Content-Type','application/json')
+            ->write(json_encode($values));
+            
+        }catch(PDOEXCEPTION $e){
+            echo '{"error": {"text": '.$e->getMessage().'<br/>'.$sql.'<br/>'.$client.'}';
             
         }
         
