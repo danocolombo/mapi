@@ -488,7 +488,12 @@ $app->get('/api/client/getMeeting/{client}', function(Request $request, Response
     $meetingID = $_GET['mid'];
 //     echo "meetingID: $meetingID<br>";
 //     exit;
-    if (sizeof($meetingID)<1){
+    if(isset($meetingID)){
+        if (strlen($meetingID)<1){
+            echo '{"error": {"text": <br/>NEED meeting number<br/>'.$client.'}';
+            exit;
+        }
+    }else{
         echo '{"error": {"text": <br/>NEED meeting number<br/>'.$client.'}';
         exit;
     }
