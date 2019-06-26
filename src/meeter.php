@@ -512,24 +512,60 @@ $app->get('/api/client/getMeeting/{client}', function(Request $request, Response
             echo '{"error": {"text": <br/>NEED client<br/>'.$client.'}';
             exit;
     }
-    
     try{
         //get db object
         $db = new db();
         // call connect
         $db = $db->connect();
-        
         $stmt = $db->query($sql);
         $meeting = $stmt->fetchAll(PDO::FETCH_OBJ);
         $db = null;
         return $response->withStatus(200)
         ->withHeader('Content-Type','application/json')
         ->write(json_encode($meeting));
-        
     }catch(PDOEXCEPTION $e){
         echo '{"error": {"text": '.$e->getMessage().'}';
-        
     }
-    
+});
+//###################################
+// get nobodies
+//
+//  http://rogueintel.org/mapi/public/index.php/api/client/getNobodies/{client}
+//
+//      this will return the Nobody and the NonPersonWorshipIDs
+//
+//
+//###################################
+$app->get('/api/client/getNobodies/{client}', function(Request $request, Response $response){
+    $client = $request->getAttribute('client');
+    // first thing is to get the Nobody value
+    switch($client){
+        case "ccc":
+            $sql = "SELECT * FROM ccc.Meeter";
+            break;
+        case "cpv":
+            $sql = "SELECT * FROM cpv.Meeter";
+            break;
+        case "wbc":
+            $sql = "SELECT * FROM wbc.Meeter";
+            break;
+        default:
+            echo '{"error": {"text": <br/>NEED client<br/>'.$client.'}';
+            exit;
+    }
+    try{
+        //get db object
+        $db = new db();
+        // call connect
+        $db = $db->connect();
+        $stmt = $db->query($sql);
+        $configs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $db = null;
+        return $response->withStatus(200)
+        ->withHeader('Content-Type','application/json')
+        ->write(json_encode($configs));
+    }catch(PDOEXCEPTION $e){
+        echo '{"error": {"text": '.$e->getMessage().'}';
+    }
 });
             
