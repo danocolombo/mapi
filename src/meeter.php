@@ -568,4 +568,55 @@ $app->get('/api/client/getNobodies/{client}', function(Request $request, Respons
         echo '{"error": {"text": '.$e->getMessage().'}';
     }
 });
+//###################################
+// get volunteer commits
+//
+//  http://rogueintel.org/mapi/public/index.php/api/client/getCommits/{client}
+//
+//      this will return the Nobody and the NonPersonWorshipIDs
+//
+//
+//###################################
+$app->get('/api/client/getCommits/{client}', function(Request $request, Response $response){
+    $client = $request->getAttribute('client');
+    
+    //delete all the records in the Commits table
+    
+    //get all active people
+    
+    // parse AOS value and store in Commits table
+    
+    // get Commits sorted by Category
+    
+    // return Commits value
+    // first thing is to get the Nobody value
+    switch($client){
+        case "ccc":
+            $sql = "SELECT * FROM ccc.Commits ORDER BY Category";
+            break;
+        case "cpv":
+            $sql = "SELECT * FROM cpv.Commits ORDER BY Category";
+            break;
+        case "wbc":
+            $sql = "SELECT * FROM wbc.Commits ORDER BY Category";
+            break;
+        default:
+            echo '{"error": {"text": <br/>NEED client<br/>'.$client.'}';
+            exit;
+    }
+    try{
+        //get db object
+        $db = new db();
+        // call connect
+        $db = $db->connect();
+        $stmt = $db->query($sql);
+        $commits = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $db = null;
+        return $response->withStatus(200)
+        ->withHeader('Content-Type','application/json')
+        ->write(json_encode($commits));
+    }catch(PDOEXCEPTION $e){
+        echo '{"error": {"text": '.$e->getMessage().'}';
+    }
+});
             
