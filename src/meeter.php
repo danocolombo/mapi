@@ -619,4 +619,103 @@ $app->get('/api/client/getCommits/{client}', function(Request $request, Response
         echo '{"error": {"text": '.$e->getMessage().'}';
     }
 });
-            
+//###################################
+// get people table value
+//
+//  http://rogueintel.org/mapi/public/index.php/api/client/getPeople/{client}
+//  http://rogueintel.org/mapi/public/index.php/api/client/getPeople/{client}?filer=active
+//      this will return the people table, with option to filter on active
+//
+//
+//###################################
+$app->get('/api/client/getPeople/{client}', function(Request $request, Response $response){
+    // optional filter is provided to create subset of people
+    $filter = $_GET['filter'];
+    $client = $request->getAttribute('client');
+    
+   
+    // first thing is to get the Nobody value
+    switch($client){
+        case "ccc":
+            $sql = "SELECT * FROM ccc.people";
+            break;
+        case "cpv":
+            $sql = "SELECT * FROM cpv.people";
+            break;
+        case "wbc":
+            $sql = "SELECT * FROM wbc.people";
+            break;
+        default:
+            echo '{"error": {"text": <br/>NEED client<br/>'.$client.'}';
+            exit;
+    }
+    if (isset($filter)){
+        switch ($filter){
+            case "active":
+                $sql .= " WHERE Active = 1";
+                break;
+        }
+    }
+    $sql .= " ORDER BY ID";
+    try{
+        //get db object
+        $db = new db();
+        // call connect
+        $db = $db->connect();
+        $stmt = $db->query($sql);
+        $people = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $db = null;
+        return $response->withStatus(200)
+        ->withHeader('Content-Type','application/json')
+        ->write(json_encode($people));
+    }catch(PDOEXCEPTION $e){
+        echo '{"error": {"text": '.$e->getMessage().'}';
+    }
+});
+//###################################
+// get a person from people table
+//
+//  http://rogueintel.org/mapi/public/index.php/api/client/getPerson/{client}?id=#
+//
+//###################################
+$app->get('/api/client/getPerson/{client}', function(Request $request, Response $response){
+    // optional filter is provided to create subset of people
+    $id = $_GET['id'];
+    if(!isset($id)){
+        echo '{"error": {"text": <br/>NEED ID<br/>'.'}';
+        exit;
+    }
+    $client = $request->getAttribute('client');
+    
+    
+    // first thing is to get the Nobody value
+    switch($client){
+        case "ccc":
+            $sql = "SELECT * FROM ccc.people WHERE ID = $id";
+            break;
+        case "cpv":
+            $sql = "SELECT * FROM cpv.people WHERE ID = $id";
+            break;
+        case "wbc":
+            $sql = "SELECT * FROM wbc.people WHERE ID = $id";
+            break;
+        default:
+            echo '{"error": {"text": <br/>NEED client<br/>'.$client.'}';
+            exit;
+    }
+    try{
+        //get db object
+        $db = new db();
+        // call connect
+        $db = $db->connect();
+        $stmt = $db->query($sql);
+        $people = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $db = null;
+        return $response->withStatus(200)
+        ->withHeader('Content-Type','application/json')
+        ->write(json_encode($people));
+    }catch(PDOEXCEPTION $e){
+        echo '{"error": {"text": '.$e->getMessage().'}';
+    }
+});
+        
