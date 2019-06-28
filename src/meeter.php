@@ -528,15 +528,15 @@ $app->get('/api/client/getMeeting/{client}', function(Request $request, Response
     }
 });
 //###################################
-// get nobodies
+// get Meeter info
 //
-//  http://rogueintel.org/mapi/public/index.php/api/client/getNobodies/{client}
+//  http://rogueintel.org/mapi/public/index.php/api/client/getMeeterInfo/{client}
 //
-//      this will return the Nobody and the NonPersonWorshipIDs
+//      this will return the Meeter table for the client
 //
 //
 //###################################
-$app->get('/api/client/getNobodies/{client}', function(Request $request, Response $response){
+$app->get('/api/client/getMeeterInfo/{client}', function(Request $request, Response $response){
     $client = $request->getAttribute('client');
     // first thing is to get the Nobody value
     switch($client){
@@ -572,8 +572,6 @@ $app->get('/api/client/getNobodies/{client}', function(Request $request, Respons
 // get volunteer commits
 //
 //  http://rogueintel.org/mapi/public/index.php/api/client/getCommits/{client}
-//
-//      this will return the Nobody and the NonPersonWorshipIDs
 //
 //
 //###################################
