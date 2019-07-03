@@ -619,4 +619,151 @@ $app->get('/api/client/getCommits/{client}', function(Request $request, Response
         echo '{"error": {"text": '.$e->getMessage().'}';
     }
 });
+//###################################
+// get person
+//
+//  http://rogueintel.org/mapi/public/index.php/api/client/getPerson/{client}
+//
+//      
+//
+//
+//###################################
+$app->get('/api/client/getPerson/{client}', function(Request $request, Response $response){
+    $userID = $_GET['id'];
+    $client = $request->getAttribute('client');
+    
+    //delete all the records in the Commits table
+    
+    //get all active people
+    
+    // parse AOS value and store in Commits table
+    
+    // get Commits sorted by Category
+    
+    // return Commits value
+    // first thing is to get the Nobody value
+    switch($client){
+        case "ccc":
+            $sql = "SELECT * FROM ccc.people where ID = $userID";
+            break;
+        case "cpv":
+            $sql = "SELECT * FROM cpv.people where ID = $userID";
+            break;
+        case "wbc":
+            $sql = "SELECT * FROM wbc.people where ID = $userID";
+            break;
+        default:
+            echo '{"error": {"text": <br/>NEED client<br/>'.$client.'}';
+            exit;
+    }
+    try{
+        //get db object
+        $db = new db();
+        // call connect
+        $db = $db->connect();
+        $stmt = $db->query($sql);
+        $person = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $db = null;
+        return $response->withStatus(200)
+        ->withHeader('Content-Type','application/json')
+        ->write(json_encode($person));
+    }catch(PDOEXCEPTION $e){
+        echo '{"error": {"text": '.$e->getMessage().'}';
+    }
+});
+//###################################
+// get meeterInfo
+//
+//  http://rogueintel.org/mapi/public/index.php/api/client/getMeeterInfo/<client>
+//
+//
+//
+//
+//###################################
+$app->get('/api/client/getMeeterInfo/{client}', function(Request $request, Response $response){
+    $client = $request->getAttribute('client');
+    switch($client){
+        case "ccc":
+            $sql = "SELECT * FROM ccc.Meeter";
+            break;
+        case "cpv":
+            $sql = "SELECT * FROM cpv.Meeter";
+            break;
+        case "wbc":
+            $sql = "SELECT * FROM wbc.Meeter";
+            break;
+        default:
+            echo '{"error": {"text": <br/>NEED client<br/>'.$client.'}';
+            exit;
+    }
+    try{
+        //get db object
+        $db = new db();
+        // call connect
+        $db = $db->connect();
+        $stmt = $db->query($sql);
+        $configs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $db = null;
+        return $response->withStatus(200)
+        ->withHeader('Content-Type','application/json')
+        ->write(json_encode($configs));
+    }catch(PDOEXCEPTION $e){
+        echo '{"error": {"text": '.$e->getMessage().'}';
+    }
+});
+//###################################
+// get personal training
+//
+//  http://rogueintel.org/mapi/public/index.php/api/user/getTrainingHistory/{client}
+//
+//      this will return the Nobody and the NonPersonWorshipIDs
+//
+//
+//###################################
+$app->get('/api/user/getTrainingHistory/{client}', function(Request $request, Response $response){
+    $userID = $_GET['id'];
+    $client = $request->getAttribute('client');
+    
+    //delete all the records in the Commits table
+    
+    //get all active people
+    
+    // parse AOS value and store in Commits table
+    
+    // get Commits sorted by Category
+    
+    // return Commits value
+    // first thing is to get the Nobody value
+    switch($client){
+        case "ccc":
+            $sql = "SELECT training.tDate, training.tTitle FROM ccc.training INNER JOIN ccc.trainees";
+            $sql .= " ON training.ID = trainees.TID WHERE trainees.PID=" . $userID . " ORDER BY training.tDate DESC";
+            break;
+        case "cpv":
+            $sql = "SELECT training.tDate, training.tTitle FROM cpv.training INNER JOIN cpv.trainees";
+            $sql .= " ON training.ID = trainees.TID WHERE trainees.PID=" . $userID . " ORDER BY training.tDate DESC";
+            break;
+        case "wbc":
+            $sql = "SELECT training.tDate, training.tTitle FROM wbc.training INNER JOIN wbc.trainees";
+            $sql .= " ON training.ID = trainees.TID WHERE trainees.PID=" . $userID . " ORDER BY training.tDate DESC";
+            break;
+        default:
+            echo '{"error": {"text": <br/>NEED client<br/>'.$client.'}';
+            exit;
+    }
+    try{
+        //get db object
+        $db = new db();
+        // call connect
+        $db = $db->connect();
+        $stmt = $db->query($sql);
+        $commits = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $db = null;
+        return $response->withStatus(200)
+        ->withHeader('Content-Type','application/json')
+        ->write(json_encode($commits));
+    }catch(PDOEXCEPTION $e){
+        echo '{"error": {"text": '.$e->getMessage().'}';
+    }
+});
             
