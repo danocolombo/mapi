@@ -589,13 +589,13 @@ $app->get('/api/client/getCommits/{client}', function(Request $request, Response
     // first thing is to get the Nobody value
     switch($client){
         case "ccc":
-            $sql = "SELECT * FROM ccc.Commits ORDER BY Category";
+            $sql = "SELECT * FROM ccc.Commits ORDER BY Category, LName, FName";
             break;
         case "cpv":
-            $sql = "SELECT * FROM cpv.Commits ORDER BY Category";
+            $sql = "SELECT * FROM cpv.Commits ORDER BY Category, LName, FName";
             break;
         case "wbc":
-            $sql = "SELECT * FROM wbc.Commits ORDER BY Category";
+            $sql = "SELECT * FROM wbc.Commits ORDER BY Category, LName, FName";
             break;
         default:
             echo '{"error": {"text": <br/>NEED client<br/>'.$client.'}';
