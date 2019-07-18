@@ -639,6 +639,9 @@ $app->get('/api/client/getPeople/{client}', function(Request $request, Response 
         case "cpv":
             $sql = "SELECT * FROM cpv.people";
             break;
+        case "uat":
+            $sql = "SELECT * FROM uat.people";
+            break;
         case "wbc":
             $sql = "SELECT * FROM wbc.people";
             break;
@@ -715,4 +718,128 @@ $app->get('/api/client/getPerson/{client}', function(Request $request, Response 
         echo '{"error": {"text": '.$e->getMessage().'}';
     }
 });
+    //###################################
+    // get the potential admins for a client
+    //
+    // http://rogueintel.org/mapi/public/index.php/api/client/getAdminCandidates/{client}
+    //
+    //###################################
+    $app->get('/api/client/getAdminCandidates/{client}', function(Request $request, Response $response){
+        $client = $request->getAttribute('client');
         
+        
+        // first thing is to get the Nobody value
+        $sql = "SELECT ID, FName, LName FROM $client.people WHERE Active = 1 AND length(LName)>0 ORDER BY FName";
+//         switch($client){
+//             case "ccc":
+//                 $sql = "SELECT * FROM ccc.people WHERE ID = $id";
+//                 break;
+//             case "cpv":
+//                 $sql = "SELECT * FROM cpv.people WHERE ID = $id";
+//                 break;
+//             case "uat":
+//                 $sql = "SELECT * FROM uat.people WHERE ID = $id";
+//                 break;
+//             case "wbc":
+//                 $sql = "SELECT * FROM wbc.people WHERE ID = $id";
+//                 break;
+//             default:
+//                 echo '{"error": {"text": <br/>NEED client<br/>'.$client.'}';
+//                 exit;
+//         }
+        try{
+            //get db object
+            $db = new db();
+            // call connect
+            $db = $db->connect();
+            $stmt = $db->query($sql);
+            $people = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $db = null;
+            return $response->withStatus(200)
+            ->withHeader('Content-Type','application/json')
+            ->write(json_encode($people));
+        }catch(PDOEXCEPTION $e){
+            echo '{"error": {"text": '.$e->getMessage().'}';
+        }
+    });
+//################################################
+// get the lable for the client referncing a ghost (nobody)
+//
+// http://rogueintel.org/mapi/public/index.php/api/client/getGhost/{client}
+//
+//################################################
+$app->get('/api/client/getGhost/{client}', function(Request $request, Response $response){
+    $client = $request->getAttribute('client');
+    $sql1 = "SELECT Setting FROM " . $client . ".Meeter WHERE Config = \"GhostID\"";
+    $sql2 = "SELECT Setting FROM " . $client . ".Meeter WHERE Config = \"GhostLabel\"";
+    
+    try{
+        //get db object
+        $db = new db();
+        // call connect
+        $db = $db->connect();
+        $stmt = $db->query($sql1);
+        $tmp1 = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        $stmt = $db->query($sql2);
+        $tmp2 = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        $db = null;
+        echo "1. " . $sql1 . "<br/>";
+        print_r($tmp1);
+        echo "<br/>:" . $tmp1['Setting'];
+        echo "<br/>";
+        
+        echo "2. " . $sql2 . "<br/>";
+        print_r($tmp2);
+        echo "<br/>:" . $gid['Setting'];
+        echo "<br/>";
+        
+        
+        exit;
+        $ghost[$gid] = gLabel;
+
+        return $response->withStatus(200)
+        ->withHeader('Content-Type','application/json')
+        ->write(json_encode($ghost));
+    }catch(PDOEXCEPTION $e){
+        echo '{"error": {"text": '.$e->getMessage().'}';
+    }
+});
+
+
+
+
+
+//###################################
+// get all the people that can be admins for a client....
+//
+// http://rogueintel.org/mapi/public/index.php/api/client/getAdminList/{client}
+//
+//###################################
+$app->get('/api/client/getAdminList/{client}', function(Request $request, Response $response){
+    $client = $request->getAttribute('client');
+    
+    
+    // first thing is to get the Nobody value
+    $theUrl = "http://100.25.128.0/mapi/public/index.php/api/client/getGhost/" . $client;
+    $data = file_get_contents($theUrl); // put the contents of the file into a variable
+    $ghostLabel = json_decode($data); // decode the JSON feed
+    
+    $sql = "SELECT ID, FName, LName FROM $client.people WHERE Active = 1 AND length(LName)>0 ORDER BY FName";
+   
+    try{
+        //get db object
+        $db = new db();
+        // call connect
+        $db = $db->connect();
+        $stmt = $db->query($sql);
+        $people = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $db = null;
+        return $response->withStatus(200)
+        ->withHeader('Content-Type','application/json')
+        ->write(json_encode($people));
+    }catch(PDOEXCEPTION $e){
+        echo '{"error": {"text": '.$e->getMessage().'}';
+    }
+});
