@@ -178,36 +178,35 @@ $app->delete('/api/user/delete/{id}', function(Request $request, Response $respo
 		
 });
 
-//get admins for client
+//###################################
+// get all the people that can be admins for a client....
+//
+// http://rogueintel.org/mapi/public/index.php/api/client/getAdminLis/{client}
+//
+//###################################
 $app->get('/api/client/getAdmins/{client}', function(Request $request, Response $response){
     //$userID = $_GET['uid'];
 
 	$client = $request->getAttribute('client');
-	$clientTable = $client . ".Meeter";
-	switch($client){
-	    case "ccc":
-	        $sql = "SELECT Setting FROM ccc.Meeter WHERE Config = 'Admins'";
-	        break;
-	    case "cpv":
-	        $sql = "SELECT Setting FROM cpv.Meeter WHERE Config = 'Admins'";
-	        break;
-	    case "wbc":
-	        $sql = "SELECT Setting FROM wbc.Meeter WHERE Config = 'Admins'";
-	        break;
-	    default:
-	        echo '{"error": {"text": <br/>NEED client<br/>'.$client.'}';
-	        exit;
+	if (!isset($client)){
+	    echo '{"error": {"text": <br/>NEED client<br/>'.$client.'}';
+	    exit;
 	}
+	$sql = "SELECT Setting FROM " . $client . ".Meeter WHERE Config = 'Admins'";
+	
 	try{
 		//get db object
 		$db = new db();
-		// call connect
 		$db = $db->connect();
 		$stmt = $db->prepare($sql);
 		$stmt->execute(array($clientTable,'Admins'));
 		$result = $stmt->fetch(PDO::FETCH_ASSOC);
 
 		print_r($result);
+		exit;
+		
+		
+		
 		echo "<br/>Setting value = " . $result['Setting'] . " ----hmmmm\n";
 		$admins = explode('#',$result['Setting']);
 		$adminCheck = FALSE;
@@ -776,29 +775,21 @@ $app->get('/api/client/getGhost/{client}', function(Request $request, Response $
     try{
         //get db object
         $db = new db();
-        // call connect
+        
         $db = $db->connect();
+        // get the Ghost ID
         $stmt = $db->query($sql1);
         $tmp1 = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
+        $gid = $tmp1[0];
+        // get the Ghost label
         $stmt = $db->query($sql2);
         $tmp2 = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
+        $glabel = $tmp2[0];
         $db = null;
-        echo "1. " . $sql1 . "<br/>";
-        print_r($tmp1);
-        echo "<br/>:" . $tmp1['Setting'];
-        echo "<br/>";
         
-        echo "2. " . $sql2 . "<br/>";
-        print_r($tmp2);
-        echo "<br/>:" . $gid['Setting'];
-        echo "<br/>";
+        //combine to create Ghost return value
+        $ghost[$gid["Setting"]] = $glabel["Setting"]; 
         
-        
-        exit;
-        $ghost[$gid] = gLabel;
-
         return $response->withStatus(200)
         ->withHeader('Content-Type','application/json')
         ->write(json_encode($ghost));
@@ -822,9 +813,12 @@ $app->get('/api/client/getAdminList/{client}', function(Request $request, Respon
     
     
     // first thing is to get the Nobody value
-    $theUrl = "http://100.25.128.0/mapi/public/index.php/api/client/getGhost/" . $client;
+    $theUrl = "http://rogueintel.org/mapi/public/index.php/api/client/getAdmins/" . $client;
     $data = file_get_contents($theUrl); // put the contents of the file into a variable
     $ghostLabel = json_decode($data); // decode the JSON feed
+    
+    print_r($data);
+    exit;
     
     $sql = "SELECT ID, FName, LName FROM $client.people WHERE Active = 1 AND length(LName)>0 ORDER BY FName";
    
