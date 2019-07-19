@@ -177,6 +177,42 @@ $app->delete('/api/user/delete/{id}', function(Request $request, Response $respo
 	}
 		
 });
+//###################################
+// get all the users for a client....
+//
+// http://rogueintel.org/mapi/public/index.php/api/client/getUsers/{client}
+//
+//###################################
+// get all users
+$app->get('/api/client/getUsers/{client}', function(Request $request, Response $response){
+    $client = $request->getAttribute('client');
+    if (!isset($client)){
+        echo '{"error": {"text": <br/>NEED client<br/>'.$client.'}';
+        exit;
+    }
+
+    $sql = "SELECT * FROM " . $client . ".users";
+    
+    try{
+        //get db object
+        $db = new db();
+        // call connect
+        $db = $db->connect();
+        
+        $stmt = $db->query($sql);
+        $users = $stmt->fetchAll(PDO::FETCH_OBJ);
+        $db = null;
+        //echo json_encode($users);
+        return $response->withStatus(200)
+        ->withHeader('Content-Type','application/json')
+        ->write(json_encode($users));
+        
+    }catch(PDOEXCEPTION $e){
+        echo '{"error": {"text": '.$e->getMessage().'}';
+    }
+    
+});
+        
 
 //###################################
 // get all the people that can be admins for a client....
@@ -192,7 +228,7 @@ $app->get('/api/client/getAdmins/{client}', function(Request $request, Response 
 	    echo '{"error": {"text": <br/>NEED client<br/>'.$client.'}';
 	    exit;
 	}
-	$sql = "SELECT Setting FROM " . $client . ".Meeter WHERE Config = 'Admins'";
+	$sql = "SELECT Setting FROM " . $client . ".Meeter WHERE Config = 'HostSet'";
 	
 	try{
 		//get db object
@@ -200,12 +236,63 @@ $app->get('/api/client/getAdmins/{client}', function(Request $request, Response 
 		$db = $db->connect();
 		$stmt = $db->prepare($sql);
 		$stmt->execute(array($clientTable,'Admins'));
-		$result = $stmt->fetch(PDO::FETCH_ASSOC);
+		$hostSet = $stmt->fetch(PDO::FETCH_ASSOC);
+        $db = null;
+        $ids = explode('|', $hostSet['Setting']);
+		//now put ids into associative array...
+		$theIds = $result[0];
+		
 
-		print_r($result);
+		//now get all active people
+		$theUrl = "http://rogueintel.org/mapi/public/index.php/api/client/getUsers/" . $client;
+		$data = file_get_contents($theUrl); // put the contents of the file into a variable
+		$users = json_decode($data); // decode the JSON feed
+
+		foreach($users as $user){
+		    $n = $user->user_firstname . " " . $user->user_surname;
+		    $i = $user->user_id;
+		    $systemUsers[$i] = $n;
+		    
+		}
+		print_r($systemUsers);
 		exit;
+		//combine to create Ghost return value
+		$ghost[$gid["Setting"]] = $glabel["Setting"]; 
 		
 		
+		
+		
+		
+		
+//         var_dump($systemUsers);
+        foreach($systemUsers as $u){
+            $item[] = $u;
+            echo "<br/>";
+            print_r($item);
+            echo "<br/>-------------------------------<br/>";
+        }
+		exit;
+        $peeps[] = $data;
+// 		echo "<br/><br/><br/>";
+		
+		foreach($peeps as $peep){
+// 		    print_r($peep);
+            echo $peep;
+		    echo "<br/>*******************************<br/>";
+		  
+// 		    echo $peep['user_id'] . "<br/><br/><br/>";
+		}
+		
+		
+// 		$peeps2[] = $systemUsers;
+//         print_r($data);
+//         echo "<br/><br/>";
+//         print_r($peeps1);
+//         echo "<br/>##################<br/>";
+//         print_r($systemUsers);
+//         echo "<br/><br/>";
+//         print_r($peeps2);
+		exit;
 		
 		echo "<br/>Setting value = " . $result['Setting'] . " ----hmmmm\n";
 		$admins = explode('#',$result['Setting']);
