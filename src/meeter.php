@@ -884,7 +884,42 @@ $app->get('/api/client/getGhost/{client}', function(Request $request, Response $
         echo '{"error": {"text": '.$e->getMessage().'}';
     }
 });
-
+//################################################
+// get the lable for the client referncing a nonPersonWorshipInfo (nobody)
+//
+// http://rogueintel.org/mapi/public/index.php/api/client/getNonPersonWorshipInfo/{client}
+//
+//################################################
+$app->get('/api/client/getNonPersonWorshipInfo/{client}', function(Request $request, Response $response){
+    $client = $request->getAttribute('client');
+    $sql1 = "SELECT Setting FROM " . $client . ".Meeter WHERE Config = \"NonPersonWorshipID\"";
+    $sql2 = "SELECT Setting FROM " . $client . ".Meeter WHERE Config = \"NonPersonWorshipLabel\"";
+    
+    try{
+        //get db object
+        $db = new db();
+        
+        $db = $db->connect();
+        // get the Ghost ID
+        $stmt = $db->query($sql1);
+        $tmp1 = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $gid = $tmp1[0];
+        // get the Ghost label
+        $stmt = $db->query($sql2);
+        $tmp2 = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $glabel = $tmp2[0];
+        $db = null;
+        
+        //combine to create Ghost return value
+        $ghost[$gid["Setting"]] = $glabel["Setting"];
+        
+        return $response->withStatus(200)
+        ->withHeader('Content-Type','application/json')
+        ->write(json_encode($ghost));
+    }catch(PDOEXCEPTION $e){
+        echo '{"error": {"text": '.$e->getMessage().'}';
+    }
+});
 
 
 
