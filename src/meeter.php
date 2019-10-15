@@ -959,3 +959,42 @@ $app->get('/api/client/getAdminList/{client}', function(Request $request, Respon
         echo '{"error": {"text": '.$e->getMessage().'}';
     }
 });
+
+//===========================================================================================
+//	get list of meetings active (today and into future
+//
+//  ENDPOINT
+// 	http://rogueintel.org/mapi/public/index.php/api/client/getAcitveMeetings/{client}
+//
+//===========================================================================================
+$app->get('/api/client/getActiveMeetingList/{client}', function(Request $request, Response $response){
+//$app->get('/api/client/getActiveMeetings/{client}', function(Request $request, Response $response){
+	// optional filter is provided to create subset of people
+	//$filter = $_GET['filter'];
+	$client = $request->getAttribute('client');
+	
+	//this is what we want to create.....
+	//sql = "SELECT m.ID, m.MtgDate, m.MtgType, m.MtgTitle, fac.fName, wor.fName, m.MtgAttendance FROM ccc.meetings m"
+	//  + " INNER JOIN ccc.people fac ON m.MtgFac = fac.ID"
+	//  + " INNER JOIN ccc.people wor ON m.MtgWorship = wor.ID"
+	//  + " WHERE m.MtgDate >= '2019-08-01'";
+	
+	$sql = "SELECT m.ID, m.MtgDate, m.MtgType, m.MtgTitle, fac.fName, wor.fName, m.MtgAttendance FROM " . $client . ".meetings m";
+	$sql = " INNER JOIN " . $client . ".people fac ON m.MtgFac = fac.ID";
+	$sql .= " INNER JOIN " . $client . ".people wor ON m.MtgWorship = wor.ID"; 
+	$sql .= " WHERE m.MtgDate >= '2019-08-01'";
+	try{
+		//get db object
+	       $db = new db();
+	       // call connect
+	       $db = $db->connect();
+	       $stmt = $db->query($sql);
+	       $meetings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+	       $db = null;
+	       return $response->withStatus(200)
+		->withHeader('Content-Type','application/json')
+		->write(json_encode($meetings));
+	}catch(PDOEXCEPTION $e){
+		echo '{"error": {"text": '.$e->getMessage().'}';
+	}
+});
