@@ -1042,7 +1042,53 @@ $app->get('/api/client/getNonPersonWorshipInfo/{client}', function(Request $requ
     }
 });
 
+//###################################
+// get id of meeting for date/type/title combo
+//
+// http://rogueintel.org/mapi/public/index.php/api/client/getAdminList/{client}
+//
+//###################################
+$app->get('/api/client/getIdForDTT/{client}', function(Request $request, Response $response){
+    $client = $request->getAttribute('client');
+    //-----------------------------------------
+    // this checks if there is a meeting entry for the date, type and title for the client
+    //-------------------------------------------------------------------------------------
+    $mtgDate = $request->getAttribute('mtgDate');
+    $mtgType = $request->getAttribute('mtgType');
+    $mtgTitle = $request->getAttribute('mtgTitle');
+    if (!isset($mtgDate)){
+        echo '{"error": {"text": <br/>NEED date<br/>'.$mtgDate.'}';
+        exit;
+    }
+    if (!isset($mtgType)){
+        echo '{"error": {"text": <br/>NEED type<br/>'.$mtgType.'}';
+        exit;
+    }
+    if (!isset($mtgTitle)){
+        echo '{"error": {"text": <br/>NEED title<br/>'.$mtgTitle.'}';
+        exit;
+    }
+    
+    $sql = "SELECT ID FROM " . $client . ".users";
+    $sql .= " WHERE MtgDate = '" . $mtgDate . "' AND";
+    $sql .= " MtgType = '" . $mtgType . "' AND";
+    $sql .= " MtgTitle = '" . $mtgTitle . ";";
 
+    try{
+        //get db object
+        $db = new db();
+        // call connect
+        $db = $db->connect();
+        $stmt = $db->query($sql);
+        $id = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $db = null;
+        return $response->withStatus(200)
+        ->withHeader('Content-Type','application/json')
+        ->write(json_encode($id));
+    }catch(PDOEXCEPTION $e){
+        echo '{"error": {"text": '.$e->getMessage().'}';
+    }
+});
 
 
 //###################################
