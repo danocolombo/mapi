@@ -381,8 +381,8 @@ $app->get('/api/client/getAdmins/{client}', function(Request $request, Response 
 
 //============================================
 // ADD MEETING TO APPROPRIATE CLIENT TABLE
-
-$app->post('/api/meeting/create', function(Request $request, Response $response){
+// call it....  http://rogueintel.org/mapi/public/index.php/api/meeting/ccc/create/
+$app->post('/api/meeting/{client}/create', function(Request $request, Response $response){
     
     $client = $request->getAttribute('client');
     
@@ -427,6 +427,7 @@ $app->post('/api/meeting/create', function(Request $request, Response $response)
     $tearDownFac = $request->getParam('tearDownFac');
     $securityFac = $request->getParam('securityFac');
     $notes = $request->getParam('notes');
+    
     
     // 35 fields
     $sql = "INSERT INTO ";
@@ -1045,7 +1046,7 @@ $app->get('/api/client/getNonPersonWorshipInfo/{client}', function(Request $requ
 //###################################
 // get id of meeting for date/type/title combo
 //
-// http://rogueintel.org/mapi/public/index.php/api/client/getAdminList/{client}
+// http://rogueintel.org/mapi/public/index.php/api/client/getIdForDTT/{client}
 //
 //###################################
 $app->get('/api/client/getIdForDTT/{client}', function(Request $request, Response $response){
@@ -1053,9 +1054,10 @@ $app->get('/api/client/getIdForDTT/{client}', function(Request $request, Respons
     //-----------------------------------------
     // this checks if there is a meeting entry for the date, type and title for the client
     //-------------------------------------------------------------------------------------
-    $mtgDate = $request->getAttribute('mtgDate');
-    $mtgType = $request->getAttribute('mtgType');
-    $mtgTitle = $request->getAttribute('mtgTitle');
+    $mtgDate = $request->getParam('mtgDate');
+    $mtgType = $request->getParam('mtgType');
+    $mtgTitle = $request->getParam('mtgTitle');
+    
     if (!isset($mtgDate)){
         echo '{"error": {"text": <br/>NEED date<br/>'.$mtgDate.'}';
         exit;
@@ -1069,18 +1071,18 @@ $app->get('/api/client/getIdForDTT/{client}', function(Request $request, Respons
         exit;
     }
     
-    $sql = "SELECT ID FROM " . $client . ".users";
+    $sql = "SELECT ID FROM " . $client . ".meetings";
     $sql .= " WHERE MtgDate = '" . $mtgDate . "' AND";
     $sql .= " MtgType = '" . $mtgType . "' AND";
-    $sql .= " MtgTitle = '" . $mtgTitle . ";";
-
+    $sql .= " MtgTitle = '" . $mtgTitle . "'";
+    
     try{
         //get db object
         $db = new db();
         // call connect
         $db = $db->connect();
         $stmt = $db->query($sql);
-        $id = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $id = $stmt->fetchAll(PDO::FETCH_OBJ);
         $db = null;
         return $response->withStatus(200)
         ->withHeader('Content-Type','application/json')
@@ -1147,9 +1149,11 @@ $app->get('/api/client/getActiveMeetingList/{client}', function(Request $request
 	//  + " WHERE m.MtgDate >= '2019-08-01'";
 	
 	$sql = "SELECT m.ID, m.MtgDate, m.MtgType, m.MtgTitle, fac.fName, wor.fName, m.MtgAttendance FROM " . $client . ".meetings m";
-	$sql = " INNER JOIN " . $client . ".people fac ON m.MtgFac = fac.ID";
+	$sql .= " INNER JOIN " . $client . ".people fac ON m.MtgFac = fac.ID";
 	$sql .= " INNER JOIN " . $client . ".people wor ON m.MtgWorship = wor.ID"; 
-	$sql .= " WHERE m.MtgDate >= '2019-08-01'";
+	$sql .= " WHERE m.MtgDate >= #2019-08-01#";
+    echo $sql;
+    exit;
 	try{
 		//get db object
 	       $db = new db();
