@@ -379,10 +379,11 @@ $app->get('/api/client/getAdmins/{client}', function(Request $request, Response 
     }
 });
 
-//============================================
+//######################################################################################
 // ADD MEETING TO APPROPRIATE CLIENT TABLE
-// call it....  http://rogueintel.org/mapi/public/index.php/api/meeting/ccc/create/
-$app->post('/api/meeting/{client}/create', function(Request $request, Response $response){
+// call it....  http://rogueintel.org/mapi/public/index.php/api/meeting/create/{client}
+//######################################################################################
+$app->post('/api/meeting/create/{client}', function(Request $request, Response $response){
     
     $client = $request->getAttribute('client');
     
@@ -413,7 +414,7 @@ $app->post('/api/meeting/{client}/create', function(Request $request, Response $
     $chips1Fac = $request->getParam('chips1Fac');
     $chips2Fac = $request->getParam('chips2Fac');
     $serenityFac = $request->getParam('serenityFac');
-    $newcomers1Fac = $request->getParam('newcomwers1Fac');
+    $newcomers1Fac = $request->getParam('newcomers1Fac');
     $newcomers2Fac = $request->getParam('newcomers2Fac');
     
     $nurseryCnt = $request->getParam('nurseryCnt');
@@ -426,23 +427,26 @@ $app->post('/api/meeting/{client}/create', function(Request $request, Response $
     $cafeFac = $request->getParam('cafeFac');
     $tearDownFac = $request->getParam('tearDownFac');
     $securityFac = $request->getParam('securityFac');
-    $notes = $request->getParam('notes');
+    $notes = $request->getParam('mtgNotes');
     
-    
-    // 35 fields
+    //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     $sql = "INSERT INTO ";
     $sql .= $client;
-    $sql .= ".meetings (MtgDate, MtgType, MtgTitle, MtgFac, MtgWorship, MtgAttendance, Meal,";
-    $sql .= " MealCnt, NurseryCnt, ChildrenCnt, YouthCnt, MtgNotes, Donations, Newcomers1Fac, Newcomers2Fac,";
-    $sql .= " Reader1Fac, Reader2Fac, NurseryFac, ChildrenFac, YouthFac, MealFac, CafeFac, TransportationFac";
-    $sql .= " SetupFac, TearDownFac, Greeter1Fac, Greeter2Fac, Chips1Fac, Chips2Fac, ResourcesFac, TeachingFac,";
-    $sql .= " SerenityFac, AudioVisualFac, AnnoucementsFac, SecurityFac) VALUES";
-    $sql .= " (:MtgDate, :MtgType, :MtgTitle, :MtgFac, :MtgWorship, :MtgAttendance, :Meal, :MealCnt, :NurseryCnt,";
-    $sql .= " :ChildrenCnt, :YouthCnt, :MtgNotes, :Donations, :Newcomers1Fac, :Newcomers2Fac,";
-    $sql .= " :Reader1Fac, :Reader2Fac, :NurseryFac, :ChilrenFac, :YouthFac, :MealFac, :CafeFac, :TransportationFac,";
-    $sql .= " :SetupFac, :TearDownFac, :Greeter1Fac, :Greeter2Fac, :Chips1Fac, :Chips2Fac, :ResourcesFac,";
-    $sql .= " :TeachingFac, :SerenityFac, :AudioVisualFac, :Announcements, :SecurityFac)";
-  
+    $sql .= ".meetings (MtgDate, MtgType, MtgTitle, MtgFac, MtgWorship,";
+    $sql .= " MtgAttendance, Meal, MealCnt, NurseryCnt, ChildrenCnt,";
+    $sql .= " YouthCnt, MtgNotes, Donations, Newcomers1Fac, Newcomers2Fac,";
+    $sql .= " Reader1Fac, Reader2Fac, NurseryFac, ChildrenFac, YouthFac,";
+    $sql .= " MealFac, CafeFac, TransportationFac, SetupFac, TearDownFac,";
+    $sql .= " Greeter1Fac, Greeter2Fac, Chips1Fac, Chips2Fac, ResourcesFac,";
+    $sql .= " TeachingFac, SerenityFac, AudioVisualFac, AnnouncementsFac, SecurityFac)";
+    
+    $sql .= " VALUES (:MtgDate, :MtgType, :MtgTitle, :MtgFac, :MtgWorship,";
+    $sql .= " :MtgAttendance, :Meal, :MealCnt, :NurseryCnt, :ChildrenCnt,";
+    $sql .= " :YouthCnt, :MtgNotes, :Donations, :Newcomers1Fac, :Newcomers2Fac,";
+    $sql .= " :Reader1Fac, :Reader2Fac, :NurseryFac, :ChildrenFac, :YouthFac,";
+    $sql .= " :MealFac, :CafeFac, :TransportationFac, :SetupFac, :TearDownFac,";
+    $sql .= " :Greeter1Fac, :Greeter2Fac, :Chips1Fac, :Chips2Fac, :ResourcesFac,";
+    $sql .= " :TeachingFac, :SerenityFac, :AudioVisualFac, :AnnouncementsFac, :SecurityFac)";
     try{
         //get db object
         $db = new db();
@@ -454,7 +458,7 @@ $app->post('/api/meeting/{client}/create', function(Request $request, Response $
         $stmt->bindParam(':MtgType', $mtgType);
         $stmt->bindParam(':MtgTitle', $mtgTitle);
         $stmt->bindParam(':MtgFac', $mtgFac);
-        $stmt->bindParam(':MtgWorship', $mtgWorshp);
+        $stmt->bindParam(':MtgWorship', $worshipFac);
         
         $stmt->bindParam(':MtgAttendance', $mtgAttendance);
         $stmt->bindParam(':Meal', $meal);
@@ -489,17 +493,16 @@ $app->post('/api/meeting/{client}/create', function(Request $request, Response $
         $stmt->bindParam(':TeachingFac', $teachingFac);
         $stmt->bindParam(':SerenityFac', $serenityFac);
         $stmt->bindParam(':AudioVisualFac', $audioVisualFac);
-        $stmt->bindParam(':Announcements', $announcementsFac);
+        $stmt->bindParam(':AnnouncementsFac', $announcementsFac);
         $stmt->bindParam(':SecurityFac', $securityFac);
         
         $stmt->execute();
         echo '{"notice": {"text": "User Added"}';
-        
-        
     }catch(PDOEXCEPTION $e){
         echo '{"error": {"text": '.$e->getMessage().'}';
         
     }
+    
     
 });
 
