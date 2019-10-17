@@ -386,11 +386,12 @@ $app->get('/api/client/getAdmins/{client}', function(Request $request, Response 
 $app->post('/api/meeting/create/{client}', function(Request $request, Response $response){
     
     $client = $request->getAttribute('client');
-    
-    $mtgDate = $request->getParam('mtgDate');
+
+    $tmpDate = $request->getParam('mtgDate');
+    $mtgDate = date("Y-m-d", strtotime($tmpDate));
     $mtgType = $request->getParam('mtgType');
     $mtgTitle = $request->getParam('mtgTitle');
-    $mtgFac = $request->getParam('mtgFac');
+    $mtgFac = $request->getParam('mtgHost');
     $mtgAttendance = $request->getParam('mtgAttendance');
     
     $donations = $request->getParam('donations');
@@ -428,6 +429,10 @@ $app->post('/api/meeting/create/{client}', function(Request $request, Response $
     $tearDownFac = $request->getParam('tearDownFac');
     $securityFac = $request->getParam('securityFac');
     $notes = $request->getParam('mtgNotes');
+    if(!isset($notes)){
+        $notes = "";
+    }
+    
     
     //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     $sql = "INSERT INTO ";
@@ -447,6 +452,7 @@ $app->post('/api/meeting/create/{client}', function(Request $request, Response $
     $sql .= " :MealFac, :CafeFac, :TransportationFac, :SetupFac, :TearDownFac,";
     $sql .= " :Greeter1Fac, :Greeter2Fac, :Chips1Fac, :Chips2Fac, :ResourcesFac,";
     $sql .= " :TeachingFac, :SerenityFac, :AudioVisualFac, :AnnouncementsFac, :SecurityFac)";
+    
     try{
         //get db object
         $db = new db();
@@ -1057,9 +1063,14 @@ $app->get('/api/client/getIdForDTT/{client}', function(Request $request, Respons
     //-----------------------------------------
     // this checks if there is a meeting entry for the date, type and title for the client
     //-------------------------------------------------------------------------------------
-    $mtgDate = $request->getParam('mtgDate');
-    $mtgType = $request->getParam('mtgType');
-    $mtgTitle = $request->getParam('mtgTitle');
+//     $mtgDate = $request->getParam('mtgDate');
+//     $mtgType = $request->getParam('mtgType');
+//     $mtgTitle = $request->getParam('mtgTitle');
+    
+    $mtgDate = $request->getQueryParam('mtgDate');
+    $mtgType = $request->getQueryParam('mtgType');
+    $mtgTitle = $request->getQueryParam('mtgTitle');
+
     
     if (!isset($mtgDate)){
         echo '{"error": {"text": <br/>NEED date<br/>'.$mtgDate.'}';
