@@ -519,8 +519,10 @@ $app->post('/api/meeting/create/{client}', function(Request $request, Response $
         
         $client = $request->getAttribute('client');
         $mid = $request->getParam('MID');
+        
         $tmpDate = $request->getParam('mtgDate');
         $mtgDate = date("Y-m-d", strtotime($tmpDate));
+
         $mtgType = $request->getParam('mtgType');
         $mtgTitle = $request->getParam('mtgTitle');
         
@@ -528,7 +530,7 @@ $app->post('/api/meeting/create/{client}', function(Request $request, Response $
             //echo '{"error": {"text": '.$e->getMessage().'}';
             return $response->withStatus(400)
                 ->withHeader('Content-Type', 'text/html')
-                ->write('INVALID REQUEST [ID]');
+                ->write('MAPI: INVALID REQUEST [ID]');
             
         }
         if((strlen($mtgType) < 6) or 
@@ -536,7 +538,7 @@ $app->post('/api/meeting/create/{client}', function(Request $request, Response $
             //echo '{"error": {"text": '.$e->getMessage().'}';
             return $response->withStatus(400)
             ->withHeader('Content-Type', 'text/html')
-            ->write('INVALID REQUEST');
+            ->write('MAPI: INVALID REQUEST');
         }
         
 
