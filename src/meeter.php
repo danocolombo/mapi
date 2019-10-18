@@ -511,6 +511,156 @@ $app->post('/api/meeting/create/{client}', function(Request $request, Response $
     
     
 });
+    //######################################################################################
+    // UPDATE MEETING TO APPROPRIATE CLIENT TABLE
+    // call it....  http://rogueintel.org/mapi/public/index.php/api/meeting/udpate/{client}&MID=248
+    //######################################################################################
+    $app->post('/api/meeting/update/{client}', function(Request $request, Response $response){
+        
+        $client = $request->getAttribute('client');
+        $mid = $request->getParam('MID');
+        $tmpDate = $request->getParam('mtgDate');
+        $mtgDate = date("Y-m-d", strtotime($tmpDate));
+        $mtgType = $request->getParam('mtgType');
+        $mtgTitle = $request->getParam('mtgTitle');
+        
+        if(!is_numeric($mid)){
+            //echo '{"error": {"text": '.$e->getMessage().'}';
+            return $response->withStatus(400)
+                ->withHeader('Content-Type', 'text/html')
+                ->write('INVALID REQUEST [ID]');
+            
+        }
+        if((strlen($mtgType) < 6) or 
+            (strlen($mtgTitle) < 4)){
+            //echo '{"error": {"text": '.$e->getMessage().'}';
+            return $response->withStatus(400)
+            ->withHeader('Content-Type', 'text/html')
+            ->write('INVALID REQUEST');
+        }
+        
+
+        $mtgFac = $request->getParam('mtgHost');
+        $mtgAttendance = $request->getParam('mtgAttendance');
+        
+        $donations = $request->getParam('donations');
+        $worshipFac = $request->getParam('worshipFac');
+        $audioVisualFac = $request->getParam('audioVisualFac');
+        $setupFac = $request->getParam('setupFac');
+        $transportationFac = $request->getParam('transportationFac');
+        
+        $greeter1Fac = $request->getParam('greeter1Fac');
+        $greeter2Fac = $request->getParam('greeter2Fac');
+        $resourcesFac = $request->getParam('resourcesFac');
+        $meal = $request->getParam('menu');
+        $mealCnt = $request->getParam('mealCnt');
+        
+        $mealFac = $request->getParam('mealFac');
+        $reader1Fac = $request->getParam('reader1Fac');
+        $reader2Fac = $request->getParam('reader2Fac');
+        $announcementsFac = $request->getParam('announcementsFac');
+        $teachingFac = $request->getParam('teachingFac');
+        
+        $chips1Fac = $request->getParam('chips1Fac');
+        $chips2Fac = $request->getParam('chips2Fac');
+        $serenityFac = $request->getParam('serenityFac');
+        $newcomers1Fac = $request->getParam('newcomers1Fac');
+        $newcomers2Fac = $request->getParam('newcomers2Fac');
+        
+        $nurseryCnt = $request->getParam('nurseryCnt');
+        $nurseryFac = $request->getParam('nurseryFac');
+        $childrenCnt = $request->getParam('childrenCnt');
+        $childrenFac = $request->getParam('childrenFac');
+        $youthCnt = $request->getParam('youthCnt');
+        
+        $youthFac = $request->getParam('youthFac');
+        $cafeFac = $request->getParam('cafeFac');
+        $tearDownFac = $request->getParam('tearDownFac');
+        $securityFac = $request->getParam('securityFac');
+        $notes = $request->getParam('mtgNotes');
+        if(!isset($notes)){
+            $notes = "";
+        }
+        
+        
+        //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        $sql = "UPDATE ";
+        $sql .= $client;
+        $sql .= ".meetings SET MtgDate = :MtgDate, MtgType = :MtgType, MtgTitle = :MtgTitle, MtgFac = :MtgFac, MtgWorship = :MtgWorship,";
+        $sql .= " MtgAttendance = :MtgAttendance, Meal = :Meal, MealCnt = :MealCnt, NurseryCnt = :NurseryCnt, ChildrenCnt = :ChildrenCnt,";
+        $sql .= " YouthCnt = :YouthCnt, MtgNotes = :MtgNotes, Donations = :Donations, Newcomers1Fac = :Newcomers1Fac, Newcomers2Fac = :Newcomers2Fac,";
+        $sql .= " Reader1Fac = :Reader1Fac, Reader2Fac = :Reader2Fac, NurseryFac = :NurseryFac, ChildrenFac = :ChildrenFac, YouthFac = :YouthFac,";
+        $sql .= " MealFac = :MealFac, CafeFac = :CafeFac, TransportationFac = :TransportationFac, SetupFac = :SetupFac, TearDownFac = :TearDownFac,";
+        $sql .= " Greeter1Fac = :Greeter1Fac, Greeter2Fac = :Greeter2Fac, Chips1Fac = :Chips1Fac, Chips2Fac = :Chips2Fac, ResourcesFac = :ResourcesFac,";
+        $sql .= " TeachingFac = :TeachingFac, SerenityFac = :SerenityFac, AudioVisualFac = :AudioVisualFac, AnnouncementsFac = :AnnouncementsFac, SecurityFac = :SecurityFac";
+        $sql .= " WHERE ID = :MID";
+
+        try{
+            //get db object
+            $db = new db();
+            // call connect
+            $db = $db->connect();
+            
+            $stmt = $db->prepare($sql);
+            $stmt->bindParam(':MID', $mid);
+            $stmt->bindParam(':MtgDate', $mtgDate);
+            $stmt->bindParam(':MtgType', $mtgType);
+            $stmt->bindParam(':MtgTitle', $mtgTitle);
+            $stmt->bindParam(':MtgFac', $mtgFac);
+            $stmt->bindParam(':MtgWorship', $worshipFac);
+            
+            $stmt->bindParam(':MtgAttendance', $mtgAttendance);
+            $stmt->bindParam(':Meal', $meal);
+            $stmt->bindParam(':MealCnt', $mealCnt);
+            $stmt->bindParam(':NurseryCnt', $nurseryCnt);
+            $stmt->bindParam(':ChildrenCnt', $childrenCnt);
+            
+            $stmt->bindParam(':YouthCnt', $youthCnt);
+            $stmt->bindParam(':MtgNotes', $notes);
+            $stmt->bindParam(':Donations', $donations);
+            $stmt->bindParam(':Newcomers1Fac', $newcomers1Fac);
+            $stmt->bindParam(':Newcomers2Fac', $newcomers2Fac);
+            
+            $stmt->bindParam(':Reader1Fac', $reader1Fac);
+            $stmt->bindParam(':Reader2Fac', $reader2Fac);
+            $stmt->bindParam(':NurseryFac', $nurseryFac);
+            $stmt->bindParam(':ChildrenFac', $childrenFac);
+            $stmt->bindParam(':YouthFac', $youthFac);
+            
+            $stmt->bindParam(':MealFac', $mealFac);
+            $stmt->bindParam(':CafeFac', $cafeFac);
+            $stmt->bindParam(':TransportationFac', $transportationFac);
+            $stmt->bindParam(':SetupFac', $setupFac);
+            $stmt->bindParam(':TearDownFac', $tearDownFac);
+            
+            $stmt->bindParam(':Greeter1Fac', $greeter1Fac);
+            $stmt->bindParam(':Greeter2Fac', $greeter2Fac);
+            $stmt->bindParam(':Chips1Fac', $chips1Fac);
+            $stmt->bindParam(':Chips2Fac', $chips2Fac);
+            $stmt->bindParam(':ResourcesFac', $resourcesFac);
+            
+            $stmt->bindParam(':TeachingFac', $teachingFac);
+            $stmt->bindParam(':SerenityFac', $serenityFac);
+            $stmt->bindParam(':AudioVisualFac', $audioVisualFac);
+            $stmt->bindParam(':AnnouncementsFac', $announcementsFac);
+            $stmt->bindParam(':SecurityFac', $securityFac);
+            
+            $stmt->execute();
+//             echo '{"notice": {"text": "User Added"}';
+            return $response->withStatus(200)
+            ->withHeader('Content-Type', 'text/html')
+            ->write('MEETING UPDATED');
+            exit;
+            
+        }catch(PDOEXCEPTION $e){
+            return $response->withStatus(500)
+            ->withHeader('Content-Type', 'text/html')
+            ->write('DATABASE UPDATE FAILED: ' . $e->getMessage());
+            exit;
+        }
+        
+        
+    });
 
 //get future meetings for client
 $app->get('/api/meetings/getFuture/{client}', function(Request $request, Response $response){
