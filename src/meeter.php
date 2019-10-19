@@ -4,6 +4,12 @@ use Psr\Http\Message\ResponseInterface as Response;
 
 $app = new \Slim\App;
 
+// U   U  SSS  EEEE RRRR   SSS
+// U   U S     E    R   R S
+// U   U  SSS  EEE  RRRR   SSS
+// U   U     S E    R R       S
+//  UUU  SSSS  EEEE R  RR SSSS
+
 // get all users
 $app->get('/api/users', function(Request $request, Response $response){
 	$sql = "SELECT * FROM users";
@@ -177,6 +183,70 @@ $app->delete('/api/user/delete/{id}', function(Request $request, Response $respo
 	}
 		
 });
+    //get admins for client
+    $app->get('/api/user/isAdmin/{client}', function(Request $request, Response $response){
+        //--------------------------------------------------------------------------
+        // this is used to check if the user is an admin for the client
+        //  http://100.25.128.0/mapi/public/index.php/api/user/isAdmin/ccc?uid=7
+        //
+        // returns either JSON true or false
+        //  ["admin","true"]
+        //  or
+        //  ["admin","false"]
+        //---------------------------------------------------------------------------
+        $userID = $_GET['uid'];
+        
+        $client = $request->getAttribute('client');
+        $clientTable = $client . ".Meeter";
+        switch($client){
+            case "ccc":
+                $sql = "SELECT Setting FROM ccc.Meeter WHERE Config = 'Admins'";
+                break;
+            case "cpv":
+                $sql = "SELECT Setting FROM cpv.Meeter WHERE Config = 'Admins'";
+                break;
+            case "wbc":
+                $sql = "SELECT Setting FROM wbc.Meeter WHERE Config = 'Admins'";
+                break;
+            default:
+                echo '{"error": {"text": <br/>NEED client<br/>'.$client.'}';
+                exit;
+        }
+        try{
+            //get db object
+            $db = new db();
+            // call connect
+            $db = $db->connect();
+            $stmt = $db->prepare($sql);
+            $stmt->execute(array($clientTable,'Admins'));
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            $admins = explode('|',$result['Setting']);
+            $adminCheck = FALSE;
+            foreach($admins as $admin){
+                
+            }
+            if ($adminCheck == TRUE){
+                $meeterCheck->admin = "true";
+            }else{
+                $meeterCheck->admin = "false";
+            }
+            
+            $db = null;
+            return $response->withStatus(200)
+            ->withHeader('Content-Type','application/json')
+            ->write(json_encode($meeterCheck));
+            
+        }catch(PDOEXCEPTION $e){
+            echo '{"error": {"text": '.$e->getMessage().'<br/>'.$sql.'<br/>'.$client.'}';
+            
+        }
+    });
+    
+//      CCC L    III EEEE N   N TTTTTT
+//     C    L     I  E    NN  N   TT
+//     C    L     I  EEE  N N N   TT
+//     C    L     I  E    N  NN   TT
+//      CCC LLLL III EEEE N   N   TT   
 //###################################
 // get all the users for a client....
 //
@@ -320,65 +390,150 @@ $app->get('/api/client/getAdmins/{client}', function(Request $request, Response 
 	}
 		
 });
-//get admins for client
-    $app->get('/api/user/isAdmin/{client}', function(Request $request, Response $response){
-    //--------------------------------------------------------------------------
-    // this is used to check if the user is an admin for the client
-    //  http://100.25.128.0/mapi/public/index.php/api/user/isAdmin/ccc?uid=7
-    //
-    // returns either JSON true or false
-    //  ["admin","true"]
-    //  or
-    //  ["admin","false"]
-    //---------------------------------------------------------------------------   
-    $userID = $_GET['uid'];
-    
-    $client = $request->getAttribute('client');
-    $clientTable = $client . ".Meeter";
-    switch($client){
-        case "ccc":
-            $sql = "SELECT Setting FROM ccc.Meeter WHERE Config = 'Admins'";
-            break;
-        case "cpv":
-            $sql = "SELECT Setting FROM cpv.Meeter WHERE Config = 'Admins'";
-            break;
-        case "wbc":
-            $sql = "SELECT Setting FROM wbc.Meeter WHERE Config = 'Admins'";
-            break;
-        default:
-            echo '{"error": {"text": <br/>NEED client<br/>'.$client.'}';
-            exit;
-    }
-    try{
-        //get db object
-        $db = new db();
-        // call connect
-        $db = $db->connect();
-        $stmt = $db->prepare($sql);
-        $stmt->execute(array($clientTable,'Admins'));
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        $admins = explode('|',$result['Setting']);
-        $adminCheck = FALSE;
-        foreach($admins as $admin){
+
+    $app->get('/api/client/getPeople/{client}', function(Request $request, Response $response){
+        // optional filter is provided to create subset of people
+        $filter = $_GET['filter'];
+        $client = $request->getAttribute('client');
         
+        
+        // first thing is to get the Nobody value
+        switch($client){
+            case "ccc":
+                $sql = "SELECT * FROM ccc.people";
+                break;
+            case "cpv":
+                $sql = "SELECT * FROM cpv.people";
+                break;
+            case "uat":
+                $sql = "SELECT * FROM uat.people";
+                break;
+            case "wbc":
+                $sql = "SELECT * FROM wbc.people";
+                break;
+            default:
+                echo '{"error": {"text": <br/>NEED client<br/>'.$client.'}';
+                exit;
         }
-        if ($adminCheck == TRUE){
-            $meeterCheck->admin = "true";
-        }else{
-            $meeterCheck->admin = "false";
+        if (isset($filter)){
+            switch ($filter){
+                case "active":
+                    $sql .= " WHERE Active = 1";
+                    break;
+            }
         }
-        
-        $db = null;
-        return $response->withStatus(200)
-        ->withHeader('Content-Type','application/json')
-        ->write(json_encode($meeterCheck));
-        
-    }catch(PDOEXCEPTION $e){
-        echo '{"error": {"text": '.$e->getMessage().'<br/>'.$sql.'<br/>'.$client.'}';
-        
-    }
+        $sql .= " ORDER BY ID";
+        try{
+            //get db object
+            $db = new db();
+            // call connect
+            $db = $db->connect();
+            $stmt = $db->query($sql);
+            $people = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $db = null;
+            return $response->withStatus(200)
+            ->withHeader('Content-Type','application/json')
+            ->write(json_encode($people));
+        }catch(PDOEXCEPTION $e){
+            echo '{"error": {"text": '.$e->getMessage().'}';
+        }
+    });
+        //###################################
+        // get a person from people table
+        //
+        //  http://rogueintel.org/mapi/public/index.php/api/client/getPerson/{client}?id=#
+        //
+        //###################################
+        $app->get('/api/client/getPerson/{client}', function(Request $request, Response $response){
+            // optional filter is provided to create subset of people
+            $id = $_GET['id'];
+            if(!isset($id)){
+                echo '{"error": {"text": <br/>NEED ID<br/>'.'}';
+                exit;
+            }
+            $client = $request->getAttribute('client');
+            
+            
+            // first thing is to get the Nobody value
+            switch($client){
+                case "ccc":
+                    $sql = "SELECT * FROM ccc.people WHERE ID = $id";
+                    break;
+                case "cpv":
+                    $sql = "SELECT * FROM cpv.people WHERE ID = $id";
+                    break;
+                case "wbc":
+                    $sql = "SELECT * FROM wbc.people WHERE ID = $id";
+                    break;
+                default:
+                    echo '{"error": {"text": <br/>NEED client<br/>'.$client.'}';
+                    exit;
+            }
+            try{
+                //get db object
+                $db = new db();
+                // call connect
+                $db = $db->connect();
+                $stmt = $db->query($sql);
+                $people = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                $db = null;
+                return $response->withStatus(200)
+                ->withHeader('Content-Type','application/json')
+                ->write(json_encode($people));
+            }catch(PDOEXCEPTION $e){
+                echo '{"error": {"text": '.$e->getMessage().'}';
+            }
+        });
+            //###################################
+            // get the potential admins for a client
+            //
+            // http://rogueintel.org/mapi/public/index.php/api/client/getAdminCandidates/{client}
+            //
+            //###################################
+            $app->get('/api/client/getAdminCandidates/{client}', function(Request $request, Response $response){
+                $client = $request->getAttribute('client');
+                
+                
+                // first thing is to get the Nobody value
+                $sql = "SELECT ID, FName, LName FROM $client.people WHERE Active = 1 AND length(LName)>0 ORDER BY FName";
+                //         switch($client){
+                //             case "ccc":
+                //                 $sql = "SELECT * FROM ccc.people WHERE ID = $id";
+                //                 break;
+                //             case "cpv":
+                //                 $sql = "SELECT * FROM cpv.people WHERE ID = $id";
+                //                 break;
+                //             case "uat":
+                //                 $sql = "SELECT * FROM uat.people WHERE ID = $id";
+                //                 break;
+                //             case "wbc":
+                //                 $sql = "SELECT * FROM wbc.people WHERE ID = $id";
+                //                 break;
+                //             default:
+                //                 echo '{"error": {"text": <br/>NEED client<br/>'.$client.'}';
+                //                 exit;
+                //         }
+                try{
+                    //get db object
+                    $db = new db();
+                    // call connect
+                    $db = $db->connect();
+                    $stmt = $db->query($sql);
+                    $people = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    $db = null;
+                    return $response->withStatus(200)
+                    ->withHeader('Content-Type','application/json')
+                    ->write(json_encode($people));
+                }catch(PDOEXCEPTION $e){
+                    echo '{"error": {"text": '.$e->getMessage().'}';
+                }
 });
 
+//     M   M EEEE EEEE TTTTTT III N   N  GGG
+//     MM MM E    E      TT    I  NN  N G
+//     M M M EEE  EEE    TT    I  N N N G  GG
+//     M   M E    E      TT    I  N  NN G   G
+//     M   M EEEE EEEE   TT   III N   N  GGG  
 //######################################################################################
 // ADD MEETING TO APPROPRIATE CLIENT TABLE
 // call it....  http://rogueintel.org/mapi/public/index.php/api/meeting/create/{client}
@@ -515,155 +670,210 @@ $app->post('/api/meeting/create/{client}', function(Request $request, Response $
     // UPDATE MEETING TO APPROPRIATE CLIENT TABLE
     // call it....  http://rogueintel.org/mapi/public/index.php/api/meeting/udpate/{client}&MID=248
     //######################################################################################
-    $app->post('/api/meeting/update/{client}', function(Request $request, Response $response){
-        
-        $client = $request->getAttribute('client');
-        $mid = $request->getParam('MID');
-        
-        $tmpDate = $request->getParam('mtgDate');
-        $mtgDate = date("Y-m-d", strtotime($tmpDate));
+$app->post('/api/meeting/update/{client}', function(Request $request, Response $response){
+    
+    $client = $request->getAttribute('client');
+    $mid = $request->getParam('MID');
+    
+    $tmpDate = $request->getParam('mtgDate');
+    $mtgDate = date("Y-m-d", strtotime($tmpDate));
 
-        $mtgType = $request->getParam('mtgType');
-        $mtgTitle = $request->getParam('mtgTitle');
-        
-        if(!is_numeric($mid)){
-            //echo '{"error": {"text": '.$e->getMessage().'}';
-            return $response->withStatus(400)
-                ->withHeader('Content-Type', 'text/html')
-                ->write('MAPI: INVALID REQUEST [ID]');
-            
-        }
-        if((strlen($mtgType) < 6) or 
-            (strlen($mtgTitle) < 4)){
-            //echo '{"error": {"text": '.$e->getMessage().'}';
-            return $response->withStatus(400)
+    $mtgType = $request->getParam('mtgType');
+    $mtgTitle = $request->getParam('mtgTitle');
+    
+    if(!is_numeric($mid)){
+        //echo '{"error": {"text": '.$e->getMessage().'}';
+        return $response->withStatus(400)
             ->withHeader('Content-Type', 'text/html')
-            ->write('MAPI: INVALID REQUEST');
-        }
+            ->write('MAPI: INVALID REQUEST [ID]');
+        
+    }
+    if((strlen($mtgType) < 6) or 
+        (strlen($mtgTitle) < 4)){
+        //echo '{"error": {"text": '.$e->getMessage().'}';
+        return $response->withStatus(400)
+        ->withHeader('Content-Type', 'text/html')
+        ->write('MAPI: INVALID REQUEST');
+    }
         
 
-        $mtgFac = $request->getParam('mtgHost');
-        $mtgAttendance = $request->getParam('mtgAttendance');
+    $mtgFac = $request->getParam('mtgHost');
+    $mtgAttendance = $request->getParam('mtgAttendance');
+    
+    $donations = $request->getParam('donations');
+    $worshipFac = $request->getParam('worshipFac');
+    $audioVisualFac = $request->getParam('audioVisualFac');
+    $setupFac = $request->getParam('setupFac');
+    $transportationFac = $request->getParam('transportationFac');
+    
+    $greeter1Fac = $request->getParam('greeter1Fac');
+    $greeter2Fac = $request->getParam('greeter2Fac');
+    $resourcesFac = $request->getParam('resourcesFac');
+    $meal = $request->getParam('menu');
+    $mealCnt = $request->getParam('mealCnt');
+    
+    $mealFac = $request->getParam('mealFac');
+    $reader1Fac = $request->getParam('reader1Fac');
+    $reader2Fac = $request->getParam('reader2Fac');
+    $announcementsFac = $request->getParam('announcementsFac');
+    $teachingFac = $request->getParam('teachingFac');
+    
+    $chips1Fac = $request->getParam('chips1Fac');
+    $chips2Fac = $request->getParam('chips2Fac');
+    $serenityFac = $request->getParam('serenityFac');
+    $newcomers1Fac = $request->getParam('newcomers1Fac');
+    $newcomers2Fac = $request->getParam('newcomers2Fac');
+    
+    $nurseryCnt = $request->getParam('nurseryCnt');
+    $nurseryFac = $request->getParam('nurseryFac');
+    $childrenCnt = $request->getParam('childrenCnt');
+    $childrenFac = $request->getParam('childrenFac');
+    $youthCnt = $request->getParam('youthCnt');
+    
+    $youthFac = $request->getParam('youthFac');
+    $cafeFac = $request->getParam('cafeFac');
+    $tearDownFac = $request->getParam('tearDownFac');
+    $securityFac = $request->getParam('securityFac');
+    $notes = $request->getParam('mtgNotes');
+    if(!isset($notes)){
+        $notes = "";
+    }
         
-        $donations = $request->getParam('donations');
-        $worshipFac = $request->getParam('worshipFac');
-        $audioVisualFac = $request->getParam('audioVisualFac');
-        $setupFac = $request->getParam('setupFac');
-        $transportationFac = $request->getParam('transportationFac');
         
-        $greeter1Fac = $request->getParam('greeter1Fac');
-        $greeter2Fac = $request->getParam('greeter2Fac');
-        $resourcesFac = $request->getParam('resourcesFac');
-        $meal = $request->getParam('menu');
-        $mealCnt = $request->getParam('mealCnt');
-        
-        $mealFac = $request->getParam('mealFac');
-        $reader1Fac = $request->getParam('reader1Fac');
-        $reader2Fac = $request->getParam('reader2Fac');
-        $announcementsFac = $request->getParam('announcementsFac');
-        $teachingFac = $request->getParam('teachingFac');
-        
-        $chips1Fac = $request->getParam('chips1Fac');
-        $chips2Fac = $request->getParam('chips2Fac');
-        $serenityFac = $request->getParam('serenityFac');
-        $newcomers1Fac = $request->getParam('newcomers1Fac');
-        $newcomers2Fac = $request->getParam('newcomers2Fac');
-        
-        $nurseryCnt = $request->getParam('nurseryCnt');
-        $nurseryFac = $request->getParam('nurseryFac');
-        $childrenCnt = $request->getParam('childrenCnt');
-        $childrenFac = $request->getParam('childrenFac');
-        $youthCnt = $request->getParam('youthCnt');
-        
-        $youthFac = $request->getParam('youthFac');
-        $cafeFac = $request->getParam('cafeFac');
-        $tearDownFac = $request->getParam('tearDownFac');
-        $securityFac = $request->getParam('securityFac');
-        $notes = $request->getParam('mtgNotes');
-        if(!isset($notes)){
-            $notes = "";
-        }
-        
-        
-        //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        $sql = "UPDATE ";
-        $sql .= $client;
-        $sql .= ".meetings SET MtgDate = :MtgDate, MtgType = :MtgType, MtgTitle = :MtgTitle, MtgFac = :MtgFac, MtgWorship = :MtgWorship,";
-        $sql .= " MtgAttendance = :MtgAttendance, Meal = :Meal, MealCnt = :MealCnt, NurseryCnt = :NurseryCnt, ChildrenCnt = :ChildrenCnt,";
-        $sql .= " YouthCnt = :YouthCnt, MtgNotes = :MtgNotes, Donations = :Donations, Newcomers1Fac = :Newcomers1Fac, Newcomers2Fac = :Newcomers2Fac,";
-        $sql .= " Reader1Fac = :Reader1Fac, Reader2Fac = :Reader2Fac, NurseryFac = :NurseryFac, ChildrenFac = :ChildrenFac, YouthFac = :YouthFac,";
-        $sql .= " MealFac = :MealFac, CafeFac = :CafeFac, TransportationFac = :TransportationFac, SetupFac = :SetupFac, TearDownFac = :TearDownFac,";
-        $sql .= " Greeter1Fac = :Greeter1Fac, Greeter2Fac = :Greeter2Fac, Chips1Fac = :Chips1Fac, Chips2Fac = :Chips2Fac, ResourcesFac = :ResourcesFac,";
-        $sql .= " TeachingFac = :TeachingFac, SerenityFac = :SerenityFac, AudioVisualFac = :AudioVisualFac, AnnouncementsFac = :AnnouncementsFac, SecurityFac = :SecurityFac";
-        $sql .= " WHERE ID = :MID";
+    //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    $sql = "UPDATE ";
+    $sql .= $client;
+    $sql .= ".meetings SET MtgDate = :MtgDate, MtgType = :MtgType, MtgTitle = :MtgTitle, MtgFac = :MtgFac, MtgWorship = :MtgWorship,";
+    $sql .= " MtgAttendance = :MtgAttendance, Meal = :Meal, MealCnt = :MealCnt, NurseryCnt = :NurseryCnt, ChildrenCnt = :ChildrenCnt,";
+    $sql .= " YouthCnt = :YouthCnt, MtgNotes = :MtgNotes, Donations = :Donations, Newcomers1Fac = :Newcomers1Fac, Newcomers2Fac = :Newcomers2Fac,";
+    $sql .= " Reader1Fac = :Reader1Fac, Reader2Fac = :Reader2Fac, NurseryFac = :NurseryFac, ChildrenFac = :ChildrenFac, YouthFac = :YouthFac,";
+    $sql .= " MealFac = :MealFac, CafeFac = :CafeFac, TransportationFac = :TransportationFac, SetupFac = :SetupFac, TearDownFac = :TearDownFac,";
+    $sql .= " Greeter1Fac = :Greeter1Fac, Greeter2Fac = :Greeter2Fac, Chips1Fac = :Chips1Fac, Chips2Fac = :Chips2Fac, ResourcesFac = :ResourcesFac,";
+    $sql .= " TeachingFac = :TeachingFac, SerenityFac = :SerenityFac, AudioVisualFac = :AudioVisualFac, AnnouncementsFac = :AnnouncementsFac, SecurityFac = :SecurityFac";
+    $sql .= " WHERE ID = :MID";
 
-        try{
-            //get db object
-            $db = new db();
-            // call connect
-            $db = $db->connect();
-            
-            $stmt = $db->prepare($sql);
-            $stmt->bindParam(':MID', $mid);
-            $stmt->bindParam(':MtgDate', $mtgDate);
-            $stmt->bindParam(':MtgType', $mtgType);
-            $stmt->bindParam(':MtgTitle', $mtgTitle);
-            $stmt->bindParam(':MtgFac', $mtgFac);
-            $stmt->bindParam(':MtgWorship', $worshipFac);
-            
-            $stmt->bindParam(':MtgAttendance', $mtgAttendance);
-            $stmt->bindParam(':Meal', $meal);
-            $stmt->bindParam(':MealCnt', $mealCnt);
-            $stmt->bindParam(':NurseryCnt', $nurseryCnt);
-            $stmt->bindParam(':ChildrenCnt', $childrenCnt);
-            
-            $stmt->bindParam(':YouthCnt', $youthCnt);
-            $stmt->bindParam(':MtgNotes', $notes);
-            $stmt->bindParam(':Donations', $donations);
-            $stmt->bindParam(':Newcomers1Fac', $newcomers1Fac);
-            $stmt->bindParam(':Newcomers2Fac', $newcomers2Fac);
-            
-            $stmt->bindParam(':Reader1Fac', $reader1Fac);
-            $stmt->bindParam(':Reader2Fac', $reader2Fac);
-            $stmt->bindParam(':NurseryFac', $nurseryFac);
-            $stmt->bindParam(':ChildrenFac', $childrenFac);
-            $stmt->bindParam(':YouthFac', $youthFac);
-            
-            $stmt->bindParam(':MealFac', $mealFac);
-            $stmt->bindParam(':CafeFac', $cafeFac);
-            $stmt->bindParam(':TransportationFac', $transportationFac);
-            $stmt->bindParam(':SetupFac', $setupFac);
-            $stmt->bindParam(':TearDownFac', $tearDownFac);
-            
-            $stmt->bindParam(':Greeter1Fac', $greeter1Fac);
-            $stmt->bindParam(':Greeter2Fac', $greeter2Fac);
-            $stmt->bindParam(':Chips1Fac', $chips1Fac);
-            $stmt->bindParam(':Chips2Fac', $chips2Fac);
-            $stmt->bindParam(':ResourcesFac', $resourcesFac);
-            
-            $stmt->bindParam(':TeachingFac', $teachingFac);
-            $stmt->bindParam(':SerenityFac', $serenityFac);
-            $stmt->bindParam(':AudioVisualFac', $audioVisualFac);
-            $stmt->bindParam(':AnnouncementsFac', $announcementsFac);
-            $stmt->bindParam(':SecurityFac', $securityFac);
-            
-            $stmt->execute();
-//             echo '{"notice": {"text": "User Added"}';
-            return $response->withStatus(200)
-            ->withHeader('Content-Type', 'text/html')
-            ->write('MEETING UPDATED');
+    try{
+        //get db object
+        $db = new db();
+        // call connect
+        $db = $db->connect();
+        
+        $stmt = $db->prepare($sql);
+        $stmt->bindParam(':MID', $mid);
+        $stmt->bindParam(':MtgDate', $mtgDate);
+        $stmt->bindParam(':MtgType', $mtgType);
+        $stmt->bindParam(':MtgTitle', $mtgTitle);
+        $stmt->bindParam(':MtgFac', $mtgFac);
+        $stmt->bindParam(':MtgWorship', $worshipFac);
+        
+        $stmt->bindParam(':MtgAttendance', $mtgAttendance);
+        $stmt->bindParam(':Meal', $meal);
+        $stmt->bindParam(':MealCnt', $mealCnt);
+        $stmt->bindParam(':NurseryCnt', $nurseryCnt);
+        $stmt->bindParam(':ChildrenCnt', $childrenCnt);
+        
+        $stmt->bindParam(':YouthCnt', $youthCnt);
+        $stmt->bindParam(':MtgNotes', $notes);
+        $stmt->bindParam(':Donations', $donations);
+        $stmt->bindParam(':Newcomers1Fac', $newcomers1Fac);
+        $stmt->bindParam(':Newcomers2Fac', $newcomers2Fac);
+        
+        $stmt->bindParam(':Reader1Fac', $reader1Fac);
+        $stmt->bindParam(':Reader2Fac', $reader2Fac);
+        $stmt->bindParam(':NurseryFac', $nurseryFac);
+        $stmt->bindParam(':ChildrenFac', $childrenFac);
+        $stmt->bindParam(':YouthFac', $youthFac);
+        
+        $stmt->bindParam(':MealFac', $mealFac);
+        $stmt->bindParam(':CafeFac', $cafeFac);
+        $stmt->bindParam(':TransportationFac', $transportationFac);
+        $stmt->bindParam(':SetupFac', $setupFac);
+        $stmt->bindParam(':TearDownFac', $tearDownFac);
+        
+        $stmt->bindParam(':Greeter1Fac', $greeter1Fac);
+        $stmt->bindParam(':Greeter2Fac', $greeter2Fac);
+        $stmt->bindParam(':Chips1Fac', $chips1Fac);
+        $stmt->bindParam(':Chips2Fac', $chips2Fac);
+        $stmt->bindParam(':ResourcesFac', $resourcesFac);
+        
+        $stmt->bindParam(':TeachingFac', $teachingFac);
+        $stmt->bindParam(':SerenityFac', $serenityFac);
+        $stmt->bindParam(':AudioVisualFac', $audioVisualFac);
+        $stmt->bindParam(':AnnouncementsFac', $announcementsFac);
+        $stmt->bindParam(':SecurityFac', $securityFac);
+        
+        $stmt->execute();
+//      echo '{"notice": {"text": "User Added"}';
+        return $response->withStatus(200)
+        ->withHeader('Content-Type', 'text/html')
+        ->write('MEETING UPDATED');
+        exit;
+        
+    }catch(PDOEXCEPTION $e){
+        return $response->withStatus(500)
+        ->withHeader('Content-Type', 'text/html')
+        ->write('DATABASE UPDATE FAILED: ' . $e->getMessage());
+        exit;
+    }
+        
+        
+});
+//delete meeting
+$app->delete('/api/meeting/deleteAll/{client}', function(Request $request, Response $response){
+    $client = $request->getAttribute('client');
+    $id = $request->getParam('meetingID');
+    if (strlen($id) < 1){
+        // no meeting ID provided - exit
+        $msg = 'meetingID required to perform delete. id:' . $id;
+        return $response->withStatus(400)
+        ->withHeader('Content-Type','application/json')
+        ->write(json_encode($msg));
+        
+        exit;
+    }
+    switch($client){
+        case "ccc":
+            $sql = "DELETE FROM ccc.meetings WHERE ID = $id";
+            $sql2 = "DELETE FROM ccc.groups WHERE MtgID = $id";
+            break;
+        case "cpv":
+            $sql = "DELETE FROM cpv.meetings WHERE ID = $id";
+            $sql2 = "DELETE FROM cpv.groups WHERE MtgID = $id";
+            break;
+        case "wbc":
+            $sql = "DELETE FROM wbc.meetings WHERE ID = $id";
+            $sql2 = "DELETE FROM wbc.groups WHERE MtgID = $id";
+            break;
+        default:
+            echo '{"error": {"text": <br/>NEED client<br/>'.$client.'}';
             exit;
-            
-        }catch(PDOEXCEPTION $e){
-            return $response->withStatus(500)
-            ->withHeader('Content-Type', 'text/html')
-            ->write('DATABASE UPDATE FAILED: ' . $e->getMessage());
-            exit;
-        }
+    }
+    
+    
+    try{
+        //get db object
+        $db = new db();
+        // call connect
+        $db = $db->connect();
         
+        $stmt = $db->prepare($sql);
+        $stmt->execute();
+        $stmt = $db->prepare($sql2);
+        $stmt->execute();
         
-    });
-
+        $db = null;
+        echo '{"notice": {"text": "All Meeting References Deleted"}';
+    }catch(PDOEXCEPTION $e){
+        echo '{"error": {"text": '.$e->getMessage().'}';
+        
+    }
+    
+});
+//         M   M EEEE EEEE TTTTTT III N   N  GGG   SSS
+//         MM MM E    E      TT    I  NN  N G     S
+//         M M M EEE  EEE    TT    I  N N N G  GG  SSS
+//         M   M E    E      TT    I  N  NN G   G     S
+//         M   M EEEE EEEE   TT   III N   N  GGG  SSSS  
 //get future meetings for client
 $app->get('/api/meetings/getFuture/{client}', function(Request $request, Response $response){
     
@@ -753,57 +963,12 @@ $app->get('/api/meetings/getHistory/{client}', function(Request $request, Respon
     }
     
 });
-    //delete meeting
-    $app->delete('/api/meeting/deleteAll/{client}', function(Request $request, Response $response){
-        $client = $request->getAttribute('client');
-        $id = $request->getParam('meetingID');
-        if (strlen($id) < 1){
-            // no meeting ID provided - exit
-            $msg = 'meetingID required to perform delete. id:' . $id;
-            return $response->withStatus(400)
-            ->withHeader('Content-Type','application/json')
-            ->write(json_encode($msg));
-            
-            exit;
-        }
-        switch($client){
-            case "ccc":
-                $sql = "DELETE FROM ccc.meetings WHERE ID = $id";
-                $sql2 = "DELETE FROM ccc.groups WHERE MtgID = $id";
-                break;
-            case "cpv":
-                $sql = "DELETE FROM cpv.meetings WHERE ID = $id";
-                $sql2 = "DELETE FROM cpv.groups WHERE MtgID = $id";
-                break;
-            case "wbc":
-                $sql = "DELETE FROM wbc.meetings WHERE ID = $id";
-                $sql2 = "DELETE FROM wbc.groups WHERE MtgID = $id";
-                break;
-            default:
-                echo '{"error": {"text": <br/>NEED client<br/>'.$client.'}';
-                exit;
-        }
-        
-        
-        try{
-            //get db object
-            $db = new db();
-            // call connect
-            $db = $db->connect();
-            
-            $stmt = $db->prepare($sql);
-            $stmt->execute();
-            $stmt = $db->prepare($sql2);
-            $stmt->execute();
-            
-            $db = null;
-            echo '{"notice": {"text": "All Meeting References Deleted"}';
-        }catch(PDOEXCEPTION $e){
-            echo '{"error": {"text": '.$e->getMessage().'}';
-            
-        }
-        
-    });
+    
+//      CCC L    III EEEE N   N TTTTTT
+//     C    L     I  E    NN  N   TT
+//     C    L     I  EEE  N N N   TT
+//     C    L     I  E    N  NN   TT
+//      CCC LLLL III EEEE N   N   TT  
     //###########################
     // GET SYSTEM CONFIG FOR CLIENT
     //
@@ -1056,7 +1221,39 @@ $app->get('/api/people/get/{client}', function(Request $request, Response $respo
     }
     
 });
-
+$app->get('/api/people/get/{client}', function(Request $request, Response $response){
+    $client = $request->getAttribute('client');
+    $pid = $request->getParam('PID');
+    
+    $sql = "SELECT * FROM ";
+    $sql .= $client;
+    $sql .= ".people WHERE ID = :PID ORDER BY LName, FName";
+    
+    try{
+        //get db object
+        $db = new db();
+        // call connect
+        $db = $db->connect();
+        
+        $stmt = $db->prepare($sql);
+        $stmt->bindParam(':PID', $pid);
+        
+        $stmt->execute();
+        $results = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        //             echo '{"notice": {"text": "User Added"}';
+        return $response->withStatus(200)
+        ->withHeader('Content-Type', 'text/html')
+        ->write(json_encode($results));
+        exit;
+        
+    }catch(PDOEXCEPTION $e){
+        return $response->withStatus(500)
+        ->withHeader('Content-Type', 'text/html')
+        ->write('CANNOT GET PEOPLE REQUEST: ' . $e->getMessage());
+        exit;
+    }
+    
+});
 //###################################
 // get people table value
 //
@@ -1066,143 +1263,7 @@ $app->get('/api/people/get/{client}', function(Request $request, Response $respo
 //
 //
 //###################################
-$app->get('/api/client/getPeople/{client}', function(Request $request, Response $response){
-    // optional filter is provided to create subset of people
-    $filter = $_GET['filter'];
-    $client = $request->getAttribute('client');
-    
-   
-    // first thing is to get the Nobody value
-    switch($client){
-        case "ccc":
-            $sql = "SELECT * FROM ccc.people";
-            break;
-        case "cpv":
-            $sql = "SELECT * FROM cpv.people";
-            break;
-        case "uat":
-            $sql = "SELECT * FROM uat.people";
-            break;
-        case "wbc":
-            $sql = "SELECT * FROM wbc.people";
-            break;
-        default:
-            echo '{"error": {"text": <br/>NEED client<br/>'.$client.'}';
-            exit;
-    }
-    if (isset($filter)){
-        switch ($filter){
-            case "active":
-                $sql .= " WHERE Active = 1";
-                break;
-        }
-    }
-    $sql .= " ORDER BY ID";
-    try{
-        //get db object
-        $db = new db();
-        // call connect
-        $db = $db->connect();
-        $stmt = $db->query($sql);
-        $people = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        $db = null;
-        return $response->withStatus(200)
-        ->withHeader('Content-Type','application/json')
-        ->write(json_encode($people));
-    }catch(PDOEXCEPTION $e){
-        echo '{"error": {"text": '.$e->getMessage().'}';
-    }
-});
-//###################################
-// get a person from people table
-//
-//  http://rogueintel.org/mapi/public/index.php/api/client/getPerson/{client}?id=#
-//
-//###################################
-$app->get('/api/client/getPerson/{client}', function(Request $request, Response $response){
-    // optional filter is provided to create subset of people
-    $id = $_GET['id'];
-    if(!isset($id)){
-        echo '{"error": {"text": <br/>NEED ID<br/>'.'}';
-        exit;
-    }
-    $client = $request->getAttribute('client');
-    
-    
-    // first thing is to get the Nobody value
-    switch($client){
-        case "ccc":
-            $sql = "SELECT * FROM ccc.people WHERE ID = $id";
-            break;
-        case "cpv":
-            $sql = "SELECT * FROM cpv.people WHERE ID = $id";
-            break;
-        case "wbc":
-            $sql = "SELECT * FROM wbc.people WHERE ID = $id";
-            break;
-        default:
-            echo '{"error": {"text": <br/>NEED client<br/>'.$client.'}';
-            exit;
-    }
-    try{
-        //get db object
-        $db = new db();
-        // call connect
-        $db = $db->connect();
-        $stmt = $db->query($sql);
-        $people = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        $db = null;
-        return $response->withStatus(200)
-        ->withHeader('Content-Type','application/json')
-        ->write(json_encode($people));
-    }catch(PDOEXCEPTION $e){
-        echo '{"error": {"text": '.$e->getMessage().'}';
-    }
-});
-    //###################################
-    // get the potential admins for a client
-    //
-    // http://rogueintel.org/mapi/public/index.php/api/client/getAdminCandidates/{client}
-    //
-    //###################################
-    $app->get('/api/client/getAdminCandidates/{client}', function(Request $request, Response $response){
-        $client = $request->getAttribute('client');
-        
-        
-        // first thing is to get the Nobody value
-        $sql = "SELECT ID, FName, LName FROM $client.people WHERE Active = 1 AND length(LName)>0 ORDER BY FName";
-//         switch($client){
-//             case "ccc":
-//                 $sql = "SELECT * FROM ccc.people WHERE ID = $id";
-//                 break;
-//             case "cpv":
-//                 $sql = "SELECT * FROM cpv.people WHERE ID = $id";
-//                 break;
-//             case "uat":
-//                 $sql = "SELECT * FROM uat.people WHERE ID = $id";
-//                 break;
-//             case "wbc":
-//                 $sql = "SELECT * FROM wbc.people WHERE ID = $id";
-//                 break;
-//             default:
-//                 echo '{"error": {"text": <br/>NEED client<br/>'.$client.'}';
-//                 exit;
-//         }
-        try{
-            //get db object
-            $db = new db();
-            // call connect
-            $db = $db->connect();
-            $stmt = $db->query($sql);
-            $people = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            $db = null;
-            return $response->withStatus(200)
-            ->withHeader('Content-Type','application/json')
-            ->write(json_encode($people));
-        }catch(PDOEXCEPTION $e){
-            echo '{"error": {"text": '.$e->getMessage().'}';
-        }
-    });
+
 //################################################
 // get the lable for the client referncing a ghost (nobody)
 //
@@ -1366,7 +1427,31 @@ $app->get('/api/client/getAdminList/{client}', function(Request $request, Respon
         echo '{"error": {"text": '.$e->getMessage().'}';
     }
 });
-
+//###################################
+$app->get('/api/client/getAOS/{client}', function(Request $request, Response $response){
+    $client = $request->getAttribute('client');
+    
+    // first thing is to get the Nobody value
+    
+    $sql = "SELECT Setting FROM $client.Meeter WHERE Config = 'AOS'";
+    echo $sql;
+    exit;
+    
+    try{
+        //get db object
+        $db = new db();
+        // call connect
+        $db = $db->connect();
+        $stmt = $db->query($sql);
+        $people = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $db = null;
+        return $response->withStatus(200)
+        ->withHeader('Content-Type','application/json')
+        ->write(json_encode($people));
+    }catch(PDOEXCEPTION $e){
+        echo '{"error": {"text": '.$e->getMessage().'}';
+    }
+});
 //===========================================================================================
 //	get list of meetings active (today and into future
 //
