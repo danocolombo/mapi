@@ -985,6 +985,78 @@ $app->get('/api/client/getCommits/{client}', function(Request $request, Response
         echo '{"error": {"text": '.$e->getMessage().'}';
     }
 });
+
+//$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+//    
+//     PPPP  EEEE  OOO  PPPP  L    EEEE
+//     P   P E    O   O P   P L    E
+//     PPPP  EEE  O   O PPPP  L    EEE
+//     P     E    O   O P     L    E
+//     P     EEEE  OOO  P     LLLL EEEE 
+//
+//$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+$app->get('/api/people/getAll/{client}', function(Request $request, Response $response){
+    $client = $request->getAttribute('client');
+    
+    $sql = "SELECT * FROM :client ORDER BY :lname, FName";
+
+    $sql = "SELECT * FROM ";
+    $sql .= $client;
+    $sql .= ".people ORDER BY LName, FName";
+
+    
+    try{
+        //get db object
+        $db = new db();
+        // call connect
+        $db = $db->connect();
+        $stmt = $db->query($sql);
+        $commits = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $db = null;
+        return $response->withStatus(200)
+        ->withHeader('Content-Type','application/json')
+        ->write(json_encode($commits));
+        
+    }catch(PDOEXCEPTION $e){
+        echo '{"error": {"text": '.$e->getMessage().'}';
+        
+    }
+        
+});
+$app->get('/api/people/get/{client}', function(Request $request, Response $response){
+    $client = $request->getAttribute('client');
+    $pid = $request->getParam('PID');
+    
+    $sql = "SELECT * FROM ";
+    $sql .= $client;
+    $sql .= ".people WHERE ID = :PID ORDER BY LName, FName";
+    
+    try{
+        //get db object
+        $db = new db();
+        // call connect
+        $db = $db->connect();
+        
+        $stmt = $db->prepare($sql);
+        $stmt->bindParam(':PID', $pid);
+        
+        $stmt->execute();
+        $results = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        //             echo '{"notice": {"text": "User Added"}';
+        return $response->withStatus(200)
+        ->withHeader('Content-Type', 'text/html')
+        ->write(json_encode($results));
+        exit;
+        
+    }catch(PDOEXCEPTION $e){
+        return $response->withStatus(500)
+        ->withHeader('Content-Type', 'text/html')
+        ->write('CANNOT GET PEOPLE REQUEST: ' . $e->getMessage());
+        exit;
+    }
+    
+});
+
 //###################################
 // get people table value
 //
