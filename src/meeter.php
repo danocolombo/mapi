@@ -1221,7 +1221,7 @@ $app->get('/api/people/get/{client}', function(Request $request, Response $respo
     }
     
 });
-$app->get('/api/people/get/{client}', function(Request $request, Response $response){
+$app->get('/api/people/getA/{client}', function(Request $request, Response $response){
     $client = $request->getAttribute('client');
     $pid = $request->getParam('PID');
     
