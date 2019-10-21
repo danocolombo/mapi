@@ -289,7 +289,7 @@ $app->get('/api/client/getUsers/{client}', function(Request $request, Response $
 //
 // http://rogueintel.org/mapi/public/index.php/api/client/getAdminLis/{client}
 //
-//###################################
+//#######################################
 $app->get('/api/client/getAdmins/{client}', function(Request $request, Response $response){
     //$userID = $_GET['uid'];
 
@@ -389,6 +389,32 @@ $app->get('/api/client/getAdmins/{client}', function(Request $request, Response 
 	
 	}
 		
+});
+$app->get('/api/client/getAOSConfig/{client}', function(Request $request, Response $response){
+    $client = $request->getAttribute('client');
+    
+    $sql = "SELECT Setting FROM ";
+    $sql .= $client;
+    $sql .= ".Meeter WHERE Config = 'AOS'";
+    
+    
+    try{
+        //get db object
+        $db = new db();
+        // call connect
+        $db = $db->connect();
+        $stmt = $db->query($sql);
+        $config = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $db = null;
+        return $response->withStatus(200)
+        ->withHeader('Content-Type','application/json')
+        ->write(json_encode($config));
+        
+    }catch(PDOEXCEPTION $e){
+        echo '{"error": {"text": '.$e->getMessage().'}';
+        
+    }
+    
 });
 
     $app->get('/api/client/getPeople/{client}', function(Request $request, Response $response){
@@ -1176,6 +1202,7 @@ $app->get('/api/people/getAll/{client}', function(Request $request, Response $re
         // call connect
         $db = $db->connect();
         $stmt = $db->query($sql);
+        
         $commits = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $db = null;
         return $response->withStatus(200)
@@ -1188,6 +1215,44 @@ $app->get('/api/people/getAll/{client}', function(Request $request, Response $re
     }
         
 });
+$app->get('/api/people/getAOSConfig/{client}', function(Request $request, Response $response){
+    $client = $request->getAttribute('client');
+    $pid = $request->getParam('PID');
+    if(!is_numeric($pid)){
+        //echo '{"error": {"text": '.$e->getMessage().'}';
+        return $response->withStatus(400)
+        ->withHeader('Content-Type', 'text/html')
+        ->write('MAPI: INVALID REQUEST [ID]');
+        
+    }
+    $sql = "SELECT AOS FROM ";
+    $sql .= $client;
+    $sql .= ".people WHERE ID = $pid";
+    
+    
+    try{
+        //get db object
+        $db = new db();
+        // call connect
+        $db = $db->connect();
+        $stmt = $db->prepare($sql);
+        $stmt = $db->query($sql);
+//         $stmt->bindParam(':PID', $pid);
+//         $stmt.execute;
+        
+        $config = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $db = null;
+        return $response->withStatus(200)
+        ->withHeader('Content-Type','application/json')
+        ->write(json_encode($config));
+        
+    }catch(PDOEXCEPTION $e){
+        echo '{"error": {"text": '.$e->getMessage().'}';
+        
+    }
+    
+});
+
 $app->get('/api/people/get/{client}', function(Request $request, Response $response){
     $client = $request->getAttribute('client');
     $pid = $request->getParam('PID');
@@ -1221,13 +1286,14 @@ $app->get('/api/people/get/{client}', function(Request $request, Response $respo
     }
     
 });
-$app->get('/api/people/getA/{client}', function(Request $request, Response $response){
+// ----------      GET LIST OF PEOPLE FOR LIST SELECTION 
+$app->get('/api/people/getActivePersonnelList/{client}', function(Request $request, Response $response){
     $client = $request->getAttribute('client');
     $pid = $request->getParam('PID');
     
-    $sql = "SELECT * FROM ";
+    $sql = "SELECT ID, FName, LName FROM ";
     $sql .= $client;
-    $sql .= ".people WHERE ID = :PID ORDER BY LName, FName";
+    $sql .= ".people WHERE Active = 1 ORDER BY FName, LName";
     
     try{
         //get db object
@@ -1236,7 +1302,7 @@ $app->get('/api/people/getA/{client}', function(Request $request, Response $resp
         $db = $db->connect();
         
         $stmt = $db->prepare($sql);
-        $stmt->bindParam(':PID', $pid);
+//         $stmt->bindParam(':PID', $pid);
         
         $stmt->execute();
         $results = $stmt->fetchAll(\PDO::FETCH_ASSOC);
@@ -1249,7 +1315,41 @@ $app->get('/api/people/getA/{client}', function(Request $request, Response $resp
     }catch(PDOEXCEPTION $e){
         return $response->withStatus(500)
         ->withHeader('Content-Type', 'text/html')
-        ->write('CANNOT GET PEOPLE REQUEST: ' . $e->getMessage());
+        ->write('CANNOT GET ACTIVE PERSONNEL LIST: ' . $e->getMessage());
+        exit;
+    }
+    
+});
+// ----------      GET LIST OF PEOPLE FOR LIST SELECTION
+$app->get('/api/people/getAllPersonnelList/{client}', function(Request $request, Response $response){
+    $client = $request->getAttribute('client');
+    $pid = $request->getParam('PID');
+    
+    $sql = "SELECT ID, FName, LName Active FROM ";
+    $sql .= $client;
+    $sql .= ".people WHERE ORDER BY FName, LName";
+    
+    try{
+        //get db object
+        $db = new db();
+        // call connect
+        $db = $db->connect();
+        
+        $stmt = $db->prepare($sql);
+        //         $stmt->bindParam(':PID', $pid);
+        
+        $stmt->execute();
+        $results = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        //             echo '{"notice": {"text": "User Added"}';
+        return $response->withStatus(200)
+        ->withHeader('Content-Type', 'text/html')
+        ->write(json_encode($results));
+        exit;
+        
+    }catch(PDOEXCEPTION $e){
+        return $response->withStatus(500)
+        ->withHeader('Content-Type', 'text/html')
+        ->write('CANNOT GET ALL PERSONNEL LIST: ' . $e->getMessage());
         exit;
     }
     
