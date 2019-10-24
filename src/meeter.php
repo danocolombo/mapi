@@ -289,7 +289,7 @@ $app->get('/api/client/getUsers/{client}', function(Request $request, Response $
 //
 // http://rogueintel.org/mapi/public/index.php/api/client/getAdminLis/{client}
 //
-//#######################################
+//###################################
 $app->get('/api/client/getAdmins/{client}', function(Request $request, Response $response){
     //$userID = $_GET['uid'];
 
